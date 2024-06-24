@@ -37,7 +37,7 @@ Department of Mathematics, University of Texas at San Antonio\\
 
 \subsection{Invalidation in Large Language Models}
 
-Large Language Models (LLMs) are advanced artificial intelligence systems trained on vast amounts of text data to generate human-like language. These models, including well-known examples such as GPT-3, utilize deep learning techniques to understand and produce text based on the patterns and structures found in their training data \citep{vaswani2017attention, brown2020language}. Despite their impressive capabilities, LLMs are prone to generating false or misleading statements, a phenomenon we term as "invalidation." Invalidation refers to the production of statements that negate a state of the world either through direct contradiction of evidence or by creating false narratives presented as evidence.
+Large Language Models (LLMs) are advanced artificial intelligence systems trained on vast amounts of text data to generate human-like language. These models utilize deep learning techniques to understand and produce text based on the patterns and structures found in their training data \citep{vaswani2017attention, brown2020language}. Despite their impressive capabilities, LLMs are prone to generating false or misleading statements, a phenomenon we term as "invalidation." Invalidation refers to the production of statements that negate a state of the world either through direct contradiction of evidence or by creating false narratives presented as evidence.
 
 LLMs generate invalidations due to the nature of their training data, which contains both accurate information and falsehoods. When generating responses, LLMs do not inherently distinguish between these categories, leading to the propagation of falsehoods \citep{bender2021dangers, weidinger2021ethical}. This issue is exacerbated by the lack of a verification mechanism within the models themselves.
 
@@ -97,14 +97,14 @@ Define the states as follows: $S_1$: The state where an actor believes $s_1$. $S
 The transition matrix $T$ is given by:
 \begin{equation}\label{eq:transition_matrix}
 T = \begin{pmatrix}
-1 - p_{12} & p_{21} \\
-p_{12} & 1 - p_{21}
+1 - p_{12} & p_{12} \\
+p_{21} & 1 - p_{21}
 \end{pmatrix}
 \end{equation}
 
 The state vector $P(t)$ evolves according to:
 \begin{equation}\label{eq:state_vector_evolution}
-P(t+1) = P(t) \cdot T
+P(t+1) = T \cdot P(t) 
 \end{equation}
 
 
@@ -120,23 +120,23 @@ P = \begin{pmatrix}
 
 \textbf{Proof.} The system reaches equilibrium when $P(t+1) = P(t) = P$, where $P$ is the equilibrium state vector. At equilibrium, the proportions of actors holding each belief remain constant. We need to solve the equation:
 \begin{equation}\label{eq:equilibrium_condition}
-P \cdot T = P
+P  =  T \cdot P
 \end{equation}
 %
 This can be written as a system of linear equations:
 %
 \begin{equation}\label{eq:linear_system}
     \begin{pmatrix}
-    P_1 & P_2
-    \end{pmatrix}
-    \begin{pmatrix}
-    1 - p_{12} & p_{21} \\
-    p_{12} & 1 - p_{21}
-    \end{pmatrix}
-    =
-    \begin{pmatrix}
-    P_1 & P_2
+        P_1 \\ P_2
     \end{pmatrix}.
+    = 
+    \begin{pmatrix}
+        1 - p_{12} & p_{12} \\
+        p_{21} & 1 - p_{21}
+    \end{pmatrix}
+    \begin{pmatrix}
+    P_1 \\ P_2
+    \end{pmatrix}
 \end{equation}
 %
 This gives us two equations:
