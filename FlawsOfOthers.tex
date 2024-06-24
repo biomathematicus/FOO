@@ -1,0 +1,490 @@
+\documentclass[12pt]{article}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{natbib}
+\usepackage{geometry}
+\usepackage{tikz}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+\geometry{margin=1in}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{lemma}{Lemma}[section]
+
+\title{The Flaws of Others}
+\author{Juan B. Gutiérrez\\
+Department of Mathematics, University of Texas at San Antonio\\
+\texttt{juan.gutierrez3@utsa.edu}}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+% To be written at the end.
+\end{abstract}
+
+\section{Introduction}
+
+\subsection{Invalidation in Large Language Models}
+
+Large Language Models (LLMs) are advanced artificial intelligence systems trained on vast amounts of text data to generate human-like language. These models, including well-known examples such as GPT-3, utilize deep learning techniques to understand and produce text based on the patterns and structures found in their training data \citep{vaswani2017attention, brown2020language}. Despite their impressive capabilities, LLMs are prone to generating false or misleading statements, a phenomenon we term as "invalidation." Invalidation refers to the production of statements that negate a state of the world either through direct contradiction of evidence or by creating false narratives presented as evidence.
+
+LLMs generate invalidations due to the nature of their training data, which contains both accurate information and falsehoods. When generating responses, LLMs do not inherently distinguish between these categories, leading to the propagation of falsehoods \citep{bender2021dangers, weidinger2021ethical}. This issue is exacerbated by the lack of a verification mechanism within the models themselves.
+
+To address the problem of invalidation, some approaches suggest using multiple LLMs to cross-verify information \citep{li2021multiview}. By generating a consensus among different models, it is possible to reduce the likelihood of false statements. This method leverages the diverse training backgrounds and potential error distributions of multiple models, enhancing the overall accuracy and reliability of the generated content.
+
+\subsection{Invalidation in Human Discourse}
+
+Invalidation is not unique to artificial intelligence; it is a well-documented phenomenon in human discourse. In social interactions, individuals often encounter statements that contradict observable evidence or present fabricated narratives as facts. This can be seen in various forms, from the denial of scientifically proven phenomena to the spread of conspiracy theories.
+
+In the field of sociology, \citet{goffman1959presentation} provides insights into how individuals shape and present narratives that may invalidate certain states of the world. \citet{festinger1957cognitive} explains how people manage conflicting information and beliefs, often leading to the dismissal of evidence that contradicts their views. \citet{cohen2001states} further illustrates how groups may collectively reject realities such as human rights violations.
+
+Media studies and communication theory also address invalidation. \citet{mcluhan1964understanding} highlights how different media forms can influence the dissemination and acceptance of information, including falsehoods. \citet{chomsky1988manufacturing} discusses how mass media can shape public perception by filtering and framing information. \citet{gerbner1976cultivation} examines how prolonged exposure to media content can alter perceptions of reality, contributing to the spread of false narratives.
+
+Political science and propaganda studies offer additional perspectives. \citet{arendt1951origins} includes discussions on how propaganda is used to manipulate public perception. \citet{ellul1965propaganda} details how these methods shape beliefs and attitudes, leading to the invalidation of certain truths.
+
+In cognitive science, \citet{kahneman1974judgment} provides a framework for understanding why individuals may accept false narratives. \citet{pinker2002blank} addresses how ideological beliefs can lead to the rejection of scientific evidence.
+
+\subsection{Formalization of Invalidation}
+
+To systematically study the phenomenon of invalidation, we propose a formal model that quantifies how invalidations propagate within a discursive network. This model considers actors as nodes in a network, with edges representing the exchange of statements. The goal is to understand how actors influence each other and how invalidations spread, eventually reaching an equilibrium state. The subsequent section will detail the methods used to develop and analyze this model, providing a quantitative framework for studying invalidation in both human and artificial contexts.
+
+
+\section{Methods}
+
+To formalize the phenomenon of invalidation within a discursive network, we develop a framework that models the interactions between actors as a series of logical propositions and arguments.
+
+\subsection{Basic Invalidation Propagation}
+
+\begin{definition}\label{def:actors_statements}
+\textbf{Actors and Statements.} Let $A = \{a_1, a_2, \ldots, a_n\}$ be the set of actors in the discursive network, and let $S = \{s_1, s_2, \ldots, s_m\}$ be the set of all possible statements in the network, where each statement $s_i$ can be either true or false.
+\end{definition}
+
+\begin{proposition}\label{prop:beliefs_goals}
+Each actor $a_i$ holds a set of beliefs, represented by $B_i \subseteq S$. A belief is a statement that the actor considers true. The goal function $G_i$, $G_i: A \to 2^S$, the power set of $S$, represents the set of statements $a_i$ aims to convince $a_j$ to believe. This includes every combination of elements that can be formed from $S$, ranging from the empty set to the full set $S$ itself. 
+\end{proposition}
+
+\begin{proposition}\label{prop:communication_invalidation}
+Communication between actors involves the exchange of statements. A communication from actor $a_i$ to actor $a_j$ is represented as $C_{ij} = \{s_k \mid s_k \in B_i \}$, where $s_k$ is a statement that $a_i$ believes and wants $a_j$ to accept. Invalidation occurs when an actor presents a statement that directly contradicts another statement or fabricates evidence to support a false proposition. Formally, $I_{ij}(s_k, s_l)$ denotes that actor $a_i$ invalidates statement $s_k$ held by $a_j$ by presenting $s_l$.
+\end{proposition}
+
+\begin{proposition}\label{prop:persuasion_update}
+The persuasion function $P_{ij}(s_k)$ represents the likelihood that actor $a_j$ will adopt statement $s_k$ after communication from $a_i$. This can be modeled using probabilities or influence weights. The update rule $U_j(B_j, C_{ij}, I_{ij})$ determines how the belief set $B_j$ of actor $a_j$ is updated after receiving communication $C_{ij}$ from actor $a_i$ and experiencing invalidation $I_{ij}$.
+\end{proposition}
+
+\begin{proposition}\label{prop:formal_model}
+Let $N = (A, S, B, G, C, I, P, U)$ be the formal model of the discursive network, where $A$ is the set of actors, $S$ is the set of statements, $B = \{B_1, B_2, \ldots, B_n\}$ is the set of belief sets for each actor, $G = \{G_1, G_2, \ldots, G_n\}$ is the set of goal functions for each actor, $C = \{C_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ is the set of communications between actors, $I = \{I_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ is the set of invalidations between actors, $P = \{P_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ is the set of persuasion functions, and $U = \{U_j \mid j \in \{1, 2, \ldots, n\}\}$ is the set of update rules.
+\end{proposition}
+
+\textbf{Example.} Consider a simple scenario with three actors $A = \{a_1, a_2, a_3\}$ and two statements $S = \{s_1, s_2\}$. Actor $a_1$ believes $s_1$ ($B_1 = \{s_1\}$) and wants $a_2$ and $a_3$ to also believe $s_1$ ($G_1(a_2) = G_1(a_3) = \{s_1\}$). Actor $a_2$ believes $s_2$ ($B_2 = \{s_2\}$) and wants $a_1$ and $a_3$ to believe $s_2$ ($G_2(a_1) = G_2(a_3) = \{s_2\}$). Actor $a_3$ is initially neutral ($B_3 = \emptyset$). Actor $a_1$ communicates $C_{12} = \{s_1\}$ to $a_2$, who invalidates $s_1$ by presenting $I_{21}(s_1, s_2)$. Actor $a_3$, observing this interaction, updates their belief set based on the persuasion functions and update rules. This framework models the propagation of invalidation within a discursive network, capturing the dynamics of belief, communication, and influence. By formalizing these interactions, we can analyze and predict how invalidation affects the acceptance and rejection of statements among actors in the network.
+
+\begin{proposition}\label{prop:basic_model_formulation}
+\textbf{Basic Model Formulation.} To describe the state of asymptotic equilibrium of the system mathematically, we need to analyze the transition probabilities between the states $s_1$ and $s_2$. This can be modeled using a Markov chain with two states.
+\end{proposition}
+
+Define the states as follows: $S_1$: The state where an actor believes $s_1$. $S_2$: The state where an actor believes $s_2$. The transition probabilities are: $p_{12}$: Probability that an actor transitions from $S_1$ to $S_2$, and $p_{21}$: Probability that an actor transitions from $S_2$ to $S_1$. Let $P(t)$ represent the state vector at time $t$, where: $P_1(t)$: Proportion of actors in state $S_1$ at time $t$ and $P_2(t)$: Proportion of actors in state $S_2$ at time $t$. 
+
+The transition matrix $T$ is given by:
+\begin{equation}\label{eq:transition_matrix}
+T = \begin{pmatrix}
+1 - p_{12} & p_{21} \\
+p_{12} & 1 - p_{21}
+\end{pmatrix}
+\end{equation}
+
+The state vector $P(t)$ evolves according to:
+\begin{equation}\label{eq:state_vector_evolution}
+P(t+1) = P(t) \cdot T
+\end{equation}
+
+
+\begin{theorem}\label{thm:basic_invalidation_propagation}
+\textbf{Basic Invalidation Propagation.} In the state of equilibrium of the system, the proportion of actors holding belief $s_1$ and the proportion of actors holding belief $s_2$ are given by:
+\[
+P = \begin{pmatrix}
+\frac{p_{21}}{p_{12} + p_{21}} \\
+\frac{p_{12}}{p_{12} + p_{21}}
+\end{pmatrix}
+\]
+\end{theorem}
+
+\textbf{Proof.} The system reaches equilibrium when $P(t+1) = P(t) = P$, where $P$ is the equilibrium state vector. At equilibrium, the proportions of actors holding each belief remain constant. We need to solve the equation:
+\begin{equation}\label{eq:equilibrium_condition}
+P \cdot T = P
+\end{equation}
+%
+This can be written as a system of linear equations:
+%
+\begin{equation}\label{eq:linear_system}
+    \begin{pmatrix}
+    P_1 & P_2
+    \end{pmatrix}
+    \begin{pmatrix}
+    1 - p_{12} & p_{21} \\
+    p_{12} & 1 - p_{21}
+    \end{pmatrix}
+    =
+    \begin{pmatrix}
+    P_1 & P_2
+    \end{pmatrix}.
+\end{equation}
+%
+This gives us two equations:
+%
+\begin{align}
+    P_1 (1 - p_{12}) + P_2 p_{12} & = P_1 \label{eq:equilibrium_eq1}, \\
+    P_1 p_{21} + P_2 (1 - p_{21}) & = P_2. \label{eq:equilibrium_eq2}.
+\end{align}
+%
+Re-arraging, we obtain 
+%
+\begin{align}
+    P_1 - P_1 p_{12} + P_2 p_{12} & = P_1, \\
+    P_1 p_{21} + P_2 - P_2 p_{21} & = P_2.  
+\end{align}
+%
+Subtract $P_1$ from both sides of the first equation and simplify:
+%
+\begin{align}
+    - P_1 p_{12} + P_2 p_{12} &= 0 \label{eq:equilibrium_simplify1} \\
+    P_1 p_{12} & = P_2 p_{12}
+\end{align}
+%
+Since $p_{12} \neq 0$:
+%
+\begin{equation}\label{eq:equilibrium_simplify2}
+    P_1 = P_2 \cdot \frac{p_{21}}{p_{12}}
+\end{equation}
+%
+From the normalization condition $P_1 + P_2 = 1$:
+%
+\begin{equation}\label{eq:normalization_condition}
+P_2 \cdot \frac{p_{21}}{p_{12}} + P_2 = 1 
+\end{equation}
+%
+from where 
+%
+\begin{equation}\label{eq:normalization_condition}
+P_2 = \frac{p_{12}}{p_{12} + p_{21}}
+\end{equation}
+%
+Substitute $P_2$ back into the equation for $P_1$:
+\begin{align}\label{eq:equilibrium_proportion1}
+    P_1 =& \frac{p_{21}}{p_{12}} \cdot P_2 \\ 
+    P_1 =& \frac{p_{21}}{p_{12} + p_{21}}
+\end{align}
+%
+Thus, the equilibrium state vector is:
+%
+\begin{equation}\label{eq:equilibrium_proportions}
+P = \begin{pmatrix}
+P_1 \\
+P_2
+\end{pmatrix}
+=
+\begin{pmatrix}
+\frac{p_{21}}{p_{12} + p_{21}} \\
+\frac{p_{12}}{p_{12} + p_{21}}
+\end{pmatrix}
+\end{equation}
+%
+This completes the proof. \(\square\)
+
+\textbf{Interpretation:} When $p_{12} > p_{21}$, i.e., when the probability of transitioning from $s_1$ to $s_2$ is higher than the probability of transitioning from $s_2$ to $s_1$, more actors will shift their belief from $s_1$ to $s_2$ than from $s_2$ to $s_1$ over time.
+
+
+\textbf{$P_1$ (Proportion of actors holding belief $s_1$)}: $P_1 = \frac{p_{21}}{p_{12} + p_{21}}$. Since $p_{12} > p_{21}$, $P_1$ will be less than 0.5. This means that fewer actors will hold belief $s_1$ at equilibrium compared to belief $s_2$.
+
+\textbf{$P_2$ (Proportion of actors holding belief $s_2$)}: $P_2 = \frac{p_{12}}{p_{12} + p_{21}}$. Since $p_{12} > p_{21}$, $P_2$ will be greater than 0.5. This means that more actors will hold belief $s_2$ at equilibrium.
+
+In summary, when $p_{12} > p_{21}$, the system will reach an equilibrium where the proportion of actors holding the belief $s_2$ is higher than the proportion of actors holding the belief $s_1$. This reflects the higher likelihood of actors transitioning from $s_1$ to $s_2$ compared to the reverse.
+
+%===============================================
+\subsection{Invalidation Model with Interaction Considerations}
+
+This section proposes a Markov chain model designed to capture the dynamics of belief systems within a discursive network, with a particular focus on the effects of interaction frequencies and the challenge of countering false beliefs.
+
+\subsubsection{Definitions}
+\begin{definition}
+\textbf{Actors and Statements.} Let \(A = \{a_1, a_2, \ldots, a_n\}\) be the set of actors in the discursive network, and let \(S = \{s_1, s_2\}\) be the set of statements, where \(s_1\) represents true statements and \(s_2\) represents false statements that are easier to spread.
+\end{definition}
+
+\begin{definition}
+\textbf{Transition Probabilities.} Define \(p_{12}(t)\) as the probability that an actor transitions from believing in \(s_1\) to \(s_2\) at time \(t\), and \(p_{21}(t)\) as the probability of transitioning from \(s_2\) back to \(s_1\).
+
+The probability $ p_{12}(t) $ is defined as a function that increases as the proportion or number of interactions involving $s_2$ increases beyond a certain threshold. It could be modeled as
+\[
+p_{12}(t) = \min\left(k_{12}, \frac{\alpha \cdot N_{s2}(t)}{\beta + N_{s2}(t)}\right),
+\]
+%
+where \(N_{s2}(t)\) represents the number of interactions involving \(s_2\), \(\alpha\) and \(\beta\) are constants to adjust sensitivity, and $k_{12}$ is a base rate factor
+
+
+The probability $p_{12}(t)$ reflects the inherent difficulty of adopting $s_1$ when $s_2$ is prevalent. It coudl be modeled as 
+\[
+p_{21}(t) = k_{21} \cdot \exp\left(-\gamma \cdot N_{s2}(t)\right),
+\]
+where \(k_{12}\) is a base rate factor, and \(\gamma\) adjusts the rate based on the prevalence of \(s_2\)
+\end{definition}
+
+\begin{proposition}
+\textbf{Model Formulation:} The transition dynamics of the discursive network are governed by the Markov transition matrix \(T(t)\), where the transition probabilities are dynamically adjusted based on interaction data:
+\[
+T(t) = \begin{pmatrix}
+1 - p_{12}(t) & p_{12}(t) \\
+p_{21}(t) & 1 - p_{21}(t)
+\end{pmatrix}
+\]
+\end{proposition}
+
+\begin{theorem}\label{thm:basic_invalidation_propagation}
+    \textbf{Frequency-based Invalidation Propagation.} In the state of equilibrium of the system, the proportion of actors holding belief $s_1$ and the proportion of actors holding belief $s_2$ are given by:
+    \[
+    P = \begin{pmatrix}
+    F(p) \\
+    G(p)
+    \end{pmatrix},
+    \]
+    where $F(p)=...$ and  $G(p)=...$
+\end{theorem}
+
+\textbf{Proof.}  The stability of the belief system over time is assessed by examining the eigenvalues of the transition matrix \(T(t)\). To ensure a stable and equitable model, the eigenvalues must satisfy the condition \(|\lambda| \leq 1\), with one eigenvalue being exactly 1, reflecting the system's capacity to reach a steady state:
+\[
+\lambda^2 - \lambda(2 - p_{12}(t) - p_{21}(t)) + (1 - p_{12}(t) - p_{21}(t) + p_{12}(t) p_{21}(t)) = 0
+\]
+
+IN PROGRESS..
+
+This completes the proof. \(\square\)
+
+%===============================================
+\subsection{Invalidation Propagation with Energy Consideration}
+
+\begin{definition}\label{def:energy_dynamics}
+\textbf{Energy Dynamics.} Let \( E_i(t) \) be the energy budget of actor \( i \) at time \( t \). We assume that \( s_1 \) is a statement that reflects a true state of the world, and \( s_2 \) is a statement that invalidates a true state of the world. Verification of \( s_1 \) depletes energy by \( e_{s1} \), and verification of \( s_2 \) depletes energy by \( e_{s2} \), with \( e_{s1} > e_{s2} \). Energy is replenished at a constant rate \( r \) per unit time. The energy budget \( E_i(t) \) remains constant over time. For \( s_1 \): \( E_i(t+1) = E_i(t) + r - e_{s1} \). For \( s_2 \): \( E_i(t+1) = E_i(t) + r - e_{s2} \).
+\end{definition}
+
+\begin{definition}\label{def:interaction_frequencies}
+\textbf{Interaction Frequencies and Transition Probabilities.} Let \( f_{i,s1}(t) \) be the frequency of interactions with \( s_1 \) for actor \( i \), and \( f_{i,s2}(t) \) be the frequency of interactions with \( s_2 \) for actor \( i \). Let \( p_{12}(t) \) and \( p_{21}(t) \) be functions of interaction frequencies such that \( p_{12}(t) = k_{12} \cdot f_{i,s2}(t) \) and \( p_{21}(t) = k_{21} \cdot f_{i,s1}(t) \).
+\end{definition}
+
+\begin{definition}\label{def:equilibrium_conditions}
+\textbf{Equilibrium Conditions.} At equilibrium, the system reaches a steady state where the frequencies of interactions with \( s_1 \) and \( s_2 \) stabilize. Thus, \( f_{i,s1}(t+1) = f_{i,s1}(t) \), and \( f_{i,s2}(t+1) = f_{i,s2}(t) \). Let \( P_{s1} \) be the proportion of actors holding \( s_1 \) at equilibrium, and \( P_{s2} \) be the proportion of actors holding \( s_2 \) at equilibrium. Since \( P_{s1} + P_{s2} = 1 \), we only need to solve for one of them.
+\end{definition}
+
+
+\begin{proposition}\label{prop:model_formulation_energy}
+    \textbf{Model Formulation.} The dynamical system governing the interactions and energy dynamics in the discursive network is defined by the discrete update equations governing the change in belief states over time. Let \( P(t) \) be the vector representing the proportions of actors holding each belief at time \( t \), and \( E(t) \) represent the energy levels of actors at time \( t \). The transition matrix \( T(t) \), dependent on the interaction frequencies, energy levels, and energy costs of verifying statements, is defined as:
+    \[
+    T(t) = \begin{pmatrix}
+    1 - k_{12} \cdot f_{i,s2}(t) \cdot e_{s2}/E_i(t) & k_{21} \cdot f_{i,s1}(t) \cdot e_{s1}/E_i(t) \\
+    k_{12} \cdot f_{i,s2}(t) \cdot e_{s2}/E_i(t) & 1 - k_{21} \cdot f_{i,s1}(t) \cdot e_{s1}/E_i(t)
+    \end{pmatrix}
+    \]
+    The system evolves according to:
+    \[
+    P(t+1) = P(t) \cdot T(t)
+    \]
+    This formulation takes into account that the verification of each statement consumes a portion of the actor's energy budget, which affects their ability to transition between belief states. The energy cost \( e_{s1} \) and \( e_{s2} \) for verifying \( s_1 \) and \( s_2 \) are normalized by the actor’s current energy level \( E_i(t) \), reflecting how energy constraints can impact decision-making processes.
+\end{proposition}
+    
+\begin{theorem}\label{thm:invalidation_energy}
+\textbf{Invalidation Propagation with Energy Consideration.} In the state of equilibrium of the refined system with energy considerations, the proportion of actors holding belief \( s_1 \) and the proportion of actors holding belief \( s_2 \) are given by:
+\[
+P = \begin{pmatrix}
+\frac{k_{21} \cdot c_{s1}}{k_{12} \cdot c_{s2} + k_{21} \cdot c_{s1}} \\
+\frac{k_{12} \cdot c_{s2}}{k_{12} \cdot c_{s2} + k_{21} \cdot c_{s1}}
+\end{pmatrix}
+\]
+\end{theorem}
+
+\textbf{Proof.} To perform a stability analysis of the discrete dynamical system with energy considerations, we explore whether the system converges to a stable equilibrium under the defined transition matrix \( T(t) \)....
+
+
+The characteristic equation of \( T(t) \) is obtained by setting the determinant of \( T(t) - \lambda I \) to zero:
+\[
+\det(T(t) - \lambda I) = \det\begin{pmatrix}
+1 - k_{12} f_{s2}(t) \frac{e_{s2}}{E_i(t)} - \lambda & k_{21} f_{s1}(t) \frac{e_{s1}}{E_i(t)} \\
+k_{12} f_{s2}(t) \frac{e_{s2}}{E_i(t)} & 1 - k_{21} f_{s1}(t) \frac{e_{s1}}{E_i(t)} - \lambda
+\end{pmatrix} = 0
+\]
+
+The roots of the characteristic polynomial are 
+\[
+\lambda_{1,2} = \left\{  1,  1 - \frac{e_{s1}  f_{s1} k_{21} + e_{s2} f_{s2}  k_{12} }{E_i} \right\}
+\]
+
+IN PROGRESS...
+
+This completes the proof. \(\square\)
+
+\textbf{Interpretation:} Higher energy consumption for $s_1$ leads to lower interaction frequencies $f_{s1}$, reducing $P_{s1}$. More frequent interactions with $s_2$ increase $P_{s2}$, making actors more likely to hold $s_2$. Higher transition constants $k_{12}$ or $k_{21}$ increase the rate of transitions, affecting the equilibrium proportions. In summary, the equilibrium analysis reveals that the proportion of actors holding $s_1$ or $s_2$ depends on the interaction frequencies, energy costs, and transition probabilities. These factors determine how beliefs propagate and stabilize in the network.
+
+
+%===============================================
+\section{Results}
+%-----------------------------------------------
+\subsection{Numerical Simulations}
+
+This section details the numerical simulations implemented to explore the dynamics of belief systems within a discursive network. The simulations leverage a Markov chain model with dynamically adjusted transition probabilities, reflecting the interaction frequencies and statement validity.  
+
+To simulate the interaction counts \( N_{s2}(t) \) involving the false statement \( s2 \) over time, a Poisson distribution is employed. The Poisson distribution is ideally suited for this purpose due to several key characteristics: (i) \textbf{Event independence:} The distribution assumes that each interaction is an independent event, a reasonable approximation given the diverse sources and triggers of discussions in a large network, (ii) \textbf{fixed average rate:} It is characterized by its rate parameter \( \lambda \), which simplifies modeling interactions that occur at a consistent average rate over time, (iii) \textbf{simplicity and mathematical tractability:} The Poisson distribution provides a straightforward formulation for calculating probabilities of occurrence for various numbers of interactions, facilitating the integration into stochastic models like Markov chains, and (iv)\textbf{flexibility in modeling sparse data:} It effectively handles data scenarios where interactions are rare or occur in bursts, typical of communication patterns in social networks.
+
+The Python programming language was used to implement the simulation, employing the NumPy library for handling numerical operations and Matplotlib for visualizing the evolution of belief states over time. Initial states and parameters were set based on theoretical assumptions to reflect realistic interaction dynamics.
+
+The simulation runs over a predefined number of time steps, updating the belief states according to the transition matrix \( T(t) \). The stability and convergence of the model are analyzed by observing changes in the proportions of belief states across the simulation period, providing insights into the long-term behavior of the network under varying interaction patterns.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{FOO_Figure1.png}
+    \caption{Evolution of beliefs over time, showcasing the dynamic changes in the network based on the specified interaction parameters.}
+    \label{fig:evolution_of_beliefs_1}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{FOO_Figure4.png}
+    \caption{Evolution of beliefs over time, showcasing the dynamic changes in the network based on the specified interaction parameters.}
+    \label{fig:evolution_of_beliefs_4}
+\end{figure}
+
+
+%-----------------------------------------------
+\subsection{Invalidation Consensus Algorithm}
+The following sections detail a methodology for handling requests using multiple Large Language Models (LLMs) to ensure a high reliability and consistency in the responses generated by distributed systems. This approach is critical in scenarios where decision-making requires integration of diverse perspectives or knowledge bases, as often encountered in complex AI systems.
+
+The process initiates with a request which acts as an input requiring processing. This request is then distributed among several instances of LLMs, labeled as LLM$_1$ to LLM$_n$. Each of these models processes the request independently and generates respective outputs, denoted as O$_1$ to O$_n$. Following the processing, all outputs are collected and assembled for a comparison.
+
+A crucial step in this workflow is the assessment of whether the outputs differ significantly among the models. If significant differences are detected, indicating a lack of consensus, the system injects additional instructions aimed at consensus-building among the models. This might involve recalibration of model parameters or redefinition of input preprocessing. The request is then resent through the system until the outputs converge sufficiently, ensuring consistency. If no significant differences are found during the comparison, the system deems the results consistent enough to formulate a final response based on the collective outputs of the models, thus ending the process.
+
+The algorithm presented in our study is closely aligned with the invalidation model designed to simulate and analyze the dynamics of belief changes within a discursive network, influenced by both true and false statements. This relationship is foundational for understanding the algorithm's purpose and its operational dynamics within the context of the proposed model. Below, we elaborate on how the algorithm relates to the invalidation model:
+
+The invalidation model we introduced operates on a Markov chain framework that depicts the stochastic transitions between belief states in a network of actors. These states are significantly influenced by true statements (\(s_1\)) and false statements (\(s_2\)), wherein the interactions among actors can either reinforce or alter their current beliefs.
+
+
+\subsubsection{Algorithm Steps and Their Functions}
+\begin{enumerate}
+    \item \textbf{Initialization and Distribution}: The process starts by initializing a request, symbolizing the input or stimulus that prompts interaction within the network. This request is distributed among various instances of large language models (LLMs), simulating the diverse responses of actors within the network.
+    
+    \item \textbf{Processing by LLMs}: Each LLM processes the request independently, mirroring the individual actor’s processing of information or statements within the network. This independence is crucial for capturing the varied interpretations and reactions among different actors based on their perspectives or biases.
+    
+    \item \textbf{Assembly and Difference Checking}: After processing, the outputs from all LLMs are assembled for comparison. This step is analogous to aggregating different beliefs or reactions within the network to assess consensus or discord.
+    
+    \item \textbf{Consensus and Response Generation}: If significant differences are detected, the algorithm injects consensus instructions and reiterates the process, reflecting the ongoing adjustments and interactions in the network as actors influence each other and gradually move towards a common understanding or belief. If no significant differences are detected, a response based on collective outputs is generated, signifying the stabilization of beliefs across the network.
+\end{enumerate}
+
+\subsubsection{Integration with Invalidation Dynamics}
+The algorithm effectively integrates the dynamics of invalidation by considering how false information (represented by \(s_2\)) can influence the network's belief system and how true information (represented by \(s_1\)) can be reasserted. The use of LLMs to simulate this process provides a robust framework for exploring the complex interplay of information dissemination, belief formation, and change within large, interactive networks.
+
+The following algorithm encapsulates the steps described above in a formal representation, suitable for implementation in a software system.
+
+\begin{algorithm}
+\caption{Consensus-based Response Generation using Multiple LLMs}
+\begin{algorithmic}[1]
+\Require Input request
+\Ensure Consistent response from multiple LLMs
+
+\State Initialize \(Request\)
+\State Distribute \(Request\) to multiple LLMs \(LLM_1, LLM_2, \ldots, LLM_n\)
+
+\For{\(i = 1\) to \(n\)}
+    \State \(O_i \leftarrow LLM_i(Process(Request))\)
+\EndFor
+
+\State Assemble outputs \(O_1, O_2, \ldots, O_n\)
+\State \(Difference \leftarrow CheckDifferences(O_1, O_2, \ldots, O_n)\)
+
+\If{\(Difference = \text{True}\)}
+    \State Add Consensus Instructions
+    \State Go to Step 2
+\Else
+    \State \(Response \leftarrow GenerateResponse(O_1, O_2, \ldots, O_n)\)
+    \State Output \(Response\)
+\EndIf
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{tikzpicture}[node distance=1.5cm and 2cm, >=Stealth, thick]
+
+    % Define the styles
+    \tikzstyle{block} = [rectangle, draw, text centered, rounded corners, minimum height=1.2cm]
+    \tikzstyle{arrow} = [->, thick]
+    \tikzstyle{circle} = [circle, fill, inner sep=1.5pt]
+    \tikzstyle{decision} = [diamond, draw, text centered, minimum width=2cm, minimum height=1.5cm, inner sep=0pt]
+    \tikzstyle{stop} = [rectangle, draw, text centered, rounded corners, minimum height=1.2cm, fill=red!30]
+
+    % Nodes
+    \node (request) [block] {Request};
+    \node (cir) [block, below of=request, yshift=-0.5cm] {Distribute};
+
+    \node (llm1) [block, below of=cir, xshift=-3cm, yshift=-1cm] {LLM$_1$};
+    \node (dots1) [block, right of=llm1] {...};
+    \node (llmj) [block, right of=dots1] {LLM$_j$};
+    \node (dots2) [block, right of=llmj] {...};
+    \node (llmn) [block, right of=dots2] {LLM$_n$};
+    
+    \node (o1) [block, below of=llm1, yshift=-1cm] {$O_1$};
+    \node (dots3) [block, right of=o1] {...};
+    \node (oj) [block, below of=llmj, yshift=-1cm] {$O_j$};
+    \node (dots4) [block, right of=oj] {...};
+    \node (on) [block, below of=llmn, yshift=-1cm] {$O_n$};
+    
+    \node (concat) [block, below of=dots3, xshift=1.5cm, yshift=-1cm] {Assemble};
+    \node (decision) [decision, below of=concat, yshift=-0.5cm] {Differ?};
+    \node (stop) [stop, right of=decision, xshift=2cm] {Respond};
+    \node (consensus) [block, below of=decision, yshift=-1cm] {Add Consensus Instructions};
+    
+    % Arrows
+    \draw [arrow] (request) -- (cir);
+    \draw [arrow] (cir) -- (llm1);
+    \draw [arrow] (cir) -- (dots1);
+    \draw [arrow] (cir) -- (llmj);
+    \draw [arrow] (cir) -- (dots2);
+    \draw [arrow] (cir) -- (llmn);
+    
+    \draw [arrow] (llm1) -- (o1);
+    \draw [arrow] (dots1) -- (dots3);
+    \draw [arrow] (llmj) -- (oj);
+    \draw [arrow] (dots2) -- (dots4);
+    \draw [arrow] (llmn) -- (on);
+    
+    \draw [arrow] (o1) -- (concat);
+    \draw [arrow] (oj) -- (concat);
+    \draw [arrow] (on) -- (concat);
+    \draw [arrow] (dots3) -- (concat);
+    \draw [arrow] (dots4) -- (concat);
+    
+    \draw [arrow] (concat) -- (decision);
+    \draw [arrow] (decision) -- node[anchor=west] {Yes} (consensus);
+    
+    % Curved arrow from consensus to decision
+    \draw [arrow] (consensus.west) -- ++(-2,0) -- ++(0,12) -- (cir.west);
+    \draw [arrow] (decision.east) -- node[anchor=south] {No} (stop.west);
+    
+\end{tikzpicture}
+
+\section{Conclusion}
+
+The numerical simulations serve as a powerful tool to understand and predict how beliefs propagate and evolve in a discursive network, illustrating the impact of interaction frequency and statement validity. The use of a Poisson distribution for modeling interaction counts adds a layer of realism and adaptability to the simulations, enhancing their applicability to real-world social dynamics.
+
+To connect the refined model of belief propagation and verification energy to large language models (LLMs), we need to understand how LLMs generate statements and how they can be used to detect falsehoods. LLMs, such as GPT-4, generate text based on patterns they have learned from vast amounts of training data. These models do not have an inherent understanding of truth or falsehood but instead generate responses that are statistically likely given the input prompt and their training data. Here’s how this relates to our model: LLMs are trained on diverse datasets that include both true (type $s_1$) and false (type $s_2$) statements. When generating a response, the LLM samples from this learned distribution, which may include falsehoods if they appear frequently in the training data. In our model, verifying true statements ($s_1$) requires more energy. Similarly, generating true and accurate information often requires more context, deeper understanding, and reasoning, which the LLM might not always apply if not explicitly prompted to do so. Generating a plausible-sounding but false statement ($s_2$) might be "easier" in terms of the model's operations, similar to how $s_2$ statements deplete less energy. Unlike humans who can verify facts through external sources or reasoning, LLMs rely solely on their training data and prompt context. Without a mechanism to validate information against a ground truth, LLMs may produce statements that are statistically likely but false, akin to our model where falsehoods ($s_2$) require less verification energy and can propagate more easily.
+
+Using multiple LLMs to spot falsehoods can be more effective than relying on a single model due to several factors that align with our refined model of belief propagation and verification energy. Multiple LLMs trained on different datasets or with different architectures can provide diverse perspectives. When multiple models analyze the same statement, they can cross-verify the information. If one model generates an $s_2$ statement, other models can provide additional context or challenge the falsehood based on their own learned patterns, similar to increasing the interaction frequency with true statements ($s_1$) in our model. Relying on a single LLM increases the risk of errors or biases inherent in that model’s training data. By consulting multiple models, we can reduce the likelihood of propagating falsehoods as different models may have different biases and strengths, leading to a more balanced and accurate output. In our model, verification energy depletes quickly when verifying true statements. Multiple LLMs can distribute this verification load. If verifying $s_1$ depletes energy, having multiple models can effectively pool their verification capacities, ensuring that the energy required to confirm the truth is distributed and managed better. This is analogous to having a collaborative verification process where the burden is shared. When multiple LLMs are used to evaluate a statement, we can derive a consensus based on the majority or weighted agreement. If most models agree that a statement is true or false, this consensus can act as a more reliable indicator than a single model’s output. This is similar to how higher interaction frequencies with true statements ($s_1$) in our model increase the likelihood of actors adopting $s_1$.
+
+By connecting the refined model of belief propagation to the behavior of LLMs, we can better understand the generation and detection of false statements. LLMs generate false statements due to the probabilistic nature of their training data, analogous to how $s_2$ statements propagate more easily in a network with lower verification energy. Using multiple LLMs for falsehood detection is effective because it distributes the verification load, leverages diverse perspectives, and reduces individual biases, akin to increasing the interaction frequency with true statements and sharing verification energy in our model. This approach aligns with our understanding that collaborative verification and diverse interactions enhance the detection and correction of falsehoods in both human networks and AI systems.
+
+\bibliographystyle{plainnat}  
+\bibliography{references}
+
+\end{document}
