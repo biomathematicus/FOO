@@ -39,11 +39,19 @@ Department of Mathematics, University of Texas at San Antonio\\
 
 Large Language Models (LLMs) are advanced artificial intelligence systems trained on vast amounts of text data to generate human-like language. These models utilize deep learning techniques to understand and produce text based on the patterns and structures found in their training data \citep{vaswani2017attention, brown2020language}. Despite their impressive capabilities, LLMs are prone to generating false or misleading statements, a phenomenon we term as "invalidation." Invalidation refers to the production of statements that negate a state of the world either through direct contradiction of evidence or by creating false narratives presented as evidence.
 
+[TO DO: Add contetnt related to falsification and how invalidaiton is different. Check Popper \& Kuhn]
+
 LLMs generate invalidations due to the nature of their training data, which contains both accurate information and falsehoods. When generating responses, LLMs do not inherently distinguish between these categories, leading to the propagation of falsehoods \citep{bender2021dangers, weidinger2021ethical}. This issue is exacerbated by the lack of a verification mechanism within the models themselves.
+
+[TO DO: Referneces to current hallucination descriptions in literature. Most recently called BS.]
 
 To address the problem of invalidation, some approaches suggest using multiple LLMs to cross-verify information \citep{li2021multiview}. By generating a consensus among different models, it is possible to reduce the likelihood of false statements. This method leverages the diverse training backgrounds and potential error distributions of multiple models, enhancing the overall accuracy and reliability of the generated content.
 
+[TO DO: Summarize state of the art in consensus]
+
 \subsection{Invalidation in Human Discourse}
+
+[TO DO: Clean out a little bit and perhaps articulate consensus in human discourse as an existing mechanism.]
 
 Invalidation is not unique to artificial intelligence; it is a well-documented phenomenon in human discourse. In social interactions, individuals often encounter statements that contradict observable evidence or present fabricated narratives as facts. This can be seen in various forms, from the denial of scientifically proven phenomena to the spread of conspiracy theories.
 
@@ -120,7 +128,7 @@ P = \begin{pmatrix}
 
 \textbf{Proof.} The system reaches equilibrium when $P(t+1) = P(t) = P$, where $P$ is the equilibrium state vector. At equilibrium, the proportions of actors holding each belief remain constant. We need to solve the equation:
 \begin{equation}\label{eq:equilibrium_condition}
-P  =  T \cdot P
+P  =  T \cdot P.
 \end{equation}
 %
 This can be written as a system of linear equations:
@@ -136,14 +144,14 @@ This can be written as a system of linear equations:
     \end{pmatrix}
     \begin{pmatrix}
     P_1 \\ P_2
-    \end{pmatrix}
+    \end{pmatrix}.
 \end{equation}
 %
 This gives us two equations:
 %
 \begin{align}
     P_1 (1 - p_{12}) + P_2 p_{12} & = P_1 \label{eq:equilibrium_eq1}, \\
-    P_1 p_{21} + P_2 (1 - p_{21}) & = P_2. \label{eq:equilibrium_eq2}.
+    P_1 p_{21} + P_2 (1 - p_{21}) & = P_2 \label{eq:equilibrium_eq2}.
 \end{align}
 %
 Re-arraging, we obtain 
@@ -336,6 +344,8 @@ This completes the proof. \(\square\)
 %-----------------------------------------------
 \subsection{Numerical Simulations}
 
+[TO DO: Read, digest, ensure it is correct.]
+
 This section details the numerical simulations implemented to explore the dynamics of belief systems within a discursive network. The simulations leverage a Markov chain model with dynamically adjusted transition probabilities, reflecting the interaction frequencies and statement validity.  
 
 To simulate the interaction counts \( N_{s2}(t) \) involving the false statement \( s2 \) over time, a Poisson distribution is employed. The Poisson distribution is ideally suited for this purpose due to several key characteristics: (i) \textbf{Event independence:} The distribution assumes that each interaction is an independent event, a reasonable approximation given the diverse sources and triggers of discussions in a large network, (ii) \textbf{fixed average rate:} It is characterized by its rate parameter \( \lambda \), which simplifies modeling interactions that occur at a consistent average rate over time, (iii) \textbf{simplicity and mathematical tractability:} The Poisson distribution provides a straightforward formulation for calculating probabilities of occurrence for various numbers of interactions, facilitating the integration into stochastic models like Markov chains, and (iv)\textbf{flexibility in modeling sparse data:} It effectively handles data scenarios where interactions are rare or occur in bursts, typical of communication patterns in social networks.
@@ -475,6 +485,8 @@ The following algorithm encapsulates the steps described above in a formal repre
 \end{tikzpicture}
 
 \section{Conclusion}
+
+[TO DO: Clean up conclusions. Ensure that we cite the context int he intro, and address how this approach improves over the state of the  art.]
 
 The numerical simulations serve as a powerful tool to understand and predict how beliefs propagate and evolve in a discursive network, illustrating the impact of interaction frequency and statement validity. The use of a Poisson distribution for modeling interaction counts adds a layer of realism and adaptability to the simulations, enhancing their applicability to real-world social dynamics.
 
