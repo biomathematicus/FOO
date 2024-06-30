@@ -231,25 +231,20 @@ This section proposes a Markov chain model designed to capture the dynamics of b
 \textbf{Actors and Statements.} Let \(A = \{a_1, a_2, \ldots, a_n\}\) be the set of actors in the discursive network, and let \(S = \{s_1, s_2\}\) be the set of statements, where \(s_1\) represents true statements and \(s_2\) represents false statements that are easier to spread.
 \end{definition}
 
-\begin{definition}
+\begin{definition}\label{def:transition_probabilities}
 \textbf{Transition Probabilities.} Define \(p_{12}(t)\) as the probability that an actor transitions from believing in \(s_1\) to \(s_2\) at time \(t\), and \(p_{21}(t)\) as the probability of transitioning from \(s_2\) back to \(s_1\).
 
-The probability $ p_{12}(t) $ is defined as a function that increases as the proportion or number of interactions involving $s_2$ increases beyond a certain threshold. It could be modeled as
+The probabilities for transitioning between belief states are defined dynamically as functions of the number of interactions involving the statement \(s_2\):
 \[
-p_{12}(t) = \min\left(k_{12}, \frac{\alpha \cdot N_{s2}(t)}{\beta + N_{s2}(t)}\right),
+p_{12}(t) = \frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)},
 \]
-%
-where \(N_{s2}(t)\) represents the number of interactions involving \(s_2\), \(\alpha\) and \(\beta\) are constants to adjust sensitivity, and $k_{12}$ is a base rate factor
-
-
-The probability $p_{12}(t)$ reflects the inherent difficulty of adopting $s_1$ when $s_2$ is prevalent. It coudl be modeled as 
 \[
-p_{21}(t) = k_{21} \cdot \exp\left(-\gamma \cdot N_{s2}(t)\right),
+p_{21}(t) = k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right),
 \]
-where \(k_{12}\) is a base rate factor, and \(\gamma\) adjusts the rate based on the prevalence of \(s_2\)
+where \(P_{2}(t)\) is the proportion of actors who adopt statement \(s_2\), and \(\alpha\), \(\beta\), \(k_{21}\), and \(\gamma\) are parameters that adjust the sensitivity and responsiveness of the transition probabilities to the prevalence of \(s_2\).
 \end{definition}
 
-\begin{proposition}
+\begin{proposition}\label{prop:model_formulation_frequency}
 \textbf{Model Formulation:} The transition dynamics of the discursive network are governed by the Markov transition matrix \(T(t)\), where the transition probabilities are dynamically adjusted based on interaction data:
 \[
 T(t) = \begin{pmatrix}
@@ -260,22 +255,60 @@ p_{21}(t) & 1 - p_{21}(t)
 \end{proposition}
 
 \begin{theorem}\label{thm:basic_invalidation_propagation}
-    \textbf{Frequency-based Invalidation Propagation.} In the state of equilibrium of the system, the proportion of actors holding belief $s_1$ and the proportion of actors holding belief $s_2$ are given by:
+    \textbf{Frequency-based Invalidation Propagation.} Model \ref{prop:model_formulation_frequency} has at least one point of qeuilibrium given by
     \[
-    P = \begin{pmatrix}
-    F(p) \\
-    G(p)
-    \end{pmatrix},
-    \]
-    where $F(p)=...$ and  $G(p)=...$
+        P = \begin{pmatrix}
+            P_1 \\
+            P_2
+            \end{pmatrix}
+            =
+            \begin{pmatrix}
+            \frac{k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)}{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)} + k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)} \\
+            \frac{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)}}{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)} + k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)}
+            \end{pmatrix}    \]
+    if $\frac{\alpha}{\kappa \beta} \leq 1$. 
 \end{theorem}
 
-\textbf{Proof.}  The stability of the belief system over time is assessed by examining the eigenvalues of the transition matrix \(T(t)\). To ensure a stable and equitable model, the eigenvalues must satisfy the condition \(|\lambda| \leq 1\), with one eigenvalue being exactly 1, reflecting the system's capacity to reach a steady state:
+\textbf{Proof.}  
+Applying Theorem \ref{thm:basic_invalidation_propagation} and Definition \ref{def:transition_probabilities}, 
+%
+\begin{equation}\label{eq:equilibrium_proportions}
+    P = \begin{pmatrix}
+    P_1 \\
+    P_2
+    \end{pmatrix}
+    =
+    \begin{pmatrix}
+    \frac{k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)}{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)} + k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)} \\
+    \frac{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)}}{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)} + k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)}
+    \end{pmatrix}
+\end{equation}
+%
+Since $P_1 + P_2 = 1$, we simply need to solve for one of them. We focus intially on $P_2$, so that 
 \[
-\lambda^2 - \lambda(2 - p_{12}(t) - p_{21}(t)) + (1 - p_{12}(t) - p_{21}(t) + p_{12}(t) p_{21}(t)) = 0
+    P_{2} = \frac{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)}}{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)} + k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)}
 \]
+%
+Algebraic manipulaiton produces the transcendental equation
+\[
+    \exp(-\gamma P_2) = \frac{\alpha}{\kappa} \cdot \frac{1-P_2}{P_2 + \beta},
+\]
+where $\gamma$, $\alpha$, $\kappa$, and $\beta$ are positive constants. The left-hand side (LHS), $\exp(-\gamma P_2)$, is an exponential decay function that decreases monotonically from 1 to 0 as $P_2$ increases from 0 towards infinity. The right-hand side (RHS), $\frac{\alpha}{\kappa} \cdot \frac{1-P_2}{P_2 + \beta}$, is a rational function that also decreases monotonically but approaches $-\frac{\alpha}{\kappa}$ as $P_2$ tends to infinity.
 
-IN PROGRESS..
+\textbf{Initial Conditions for Intersection}: The condition $\frac{\alpha}{\kappa \beta} \leq 1$ must be met for the initial values to ensure that an intersection occurs. This condition positions the starting value of the RHS at or below the starting point of the LHS, enabling at least one intersection as guaranteed by the Intermediate Value Theorem.
+
+\textbf{Exploring Rates of Decrease}
+The derivatives of the functions are:
+\begin{align*}
+    \text{LHS Derivative: } & -\gamma \exp(-\gamma P_2) \quad \text{(always negative)}, \\
+    \text{RHS Derivative: } & -\frac{\alpha}{\kappa} \cdot \frac{\beta + 1}{(P_2 + \beta)^2} \quad \text{(also always negative)}.
+\end{align*}
+These derivatives confirm that both functions decrease continuously, albeit at rates that differ significantly. The LHS, with its exponential form, decreases at a rate directly proportional to its current value, resulting in a swift initial decline that progressively slows but never halts.
+
+\textbf{Long-Term Behavior and Multiple Intersections}: 
+In the long-term, the significant aspect arises from the interaction between the different asymptotic behaviors of the LHS and RHS. While the LHS rapidly approaches zero, the RHS more gradually approaches its negative asymptote of $-\frac{\alpha}{\kappa}$. This disparity in how they approach their respective limits—particularly the slower approach of the RHS to its negative limit—creates a scenario where, depending on parameter values, the RHS could initially decrease faster than the LHS and then slow its rate of decline, allowing the LHS, which continues its steady descent towards zero, to potentially intersect the RHS again.
+
+%\textbf{Parameter Influence and Simulations}:  The behavior and intersection points of these functions are highly dependent on the values of $\gamma$, $\alpha$, $\kappa$, and $\beta$. Variations in these parameters can significantly affect the rate at which each function approaches its limit, thereby influencing the number and exact locations of intersections. Numerical simulations alongside analytical approaches are recommended to explore these effects comprehensively and to visualize how different parameter settings change the interaction dynamics between the functions.
 
 This completes the proof. \(\square\)
 
