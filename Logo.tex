@@ -1,0 +1,35 @@
+\documentclass{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric}
+
+\begin{document}
+\begin{tikzpicture}
+    % Define prism shape
+    \tikzstyle{prism} = [regular polygon, regular polygon sides=4, minimum size=1cm, draw]
+
+    % Draw central prism
+    \node[prism] at (0, 0) {};
+    
+    % Draw surrounding prisms
+    %\foreach \x/\y in {2/2, -2/2, 2/-2, -2/-2} {
+    %    \node[prism] at (\x, \y) {};
+    %}
+
+    %\foreach \x/\y in {4/0, -4/0, 0/4, 0/-4} {
+    %    \node[prism] at (\x, \y) {};
+    %}
+
+    % Draw light beams
+    \foreach \angle in {45, 135, 225, 315} {
+        \draw[line width=4pt] (0, 0) -- ++(\angle:2cm);
+    }
+
+    \foreach \angle in {0, 90, 180, 270} {
+        \draw[line width=4pt] (0, 0) -- ++(\angle:4cm);
+    }
+
+    \foreach \angle in {22.5, 67.5, 112.5, 157.5, 202.5, 247.5, 292.5, 337.5} {
+        \draw[line width=4pt] (0, 0) -- ++(\angle:2.8cm);
+    } 
+\end{tikzpicture}
+\end{document}

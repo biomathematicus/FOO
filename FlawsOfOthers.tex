@@ -24,7 +24,7 @@
 \author{
     Juan B. Gutiérrez\footnote{\href{mailto:juan.gutierrez3@utsa.edu}{juan.gutierrez3@utsa.edu} Department of Mathematics, University of Texas at San Antonio.}
     % 
-    and 
+    %nd 
     %
 }
 \date{}
@@ -37,46 +37,94 @@
 % To be written at the end.
 \end{abstract}
 
+
+%===============================================
 \section{Introduction}
+%===============================================
 
-\subsection{Invalidation in Large Language Models}
+Large Language Models (LLMs) are advanced artificial intelligence systems trained on vast amounts of text data to generate human-like language. These models utilize deep learning techniques to understand and produce text based on the patterns and structures found in their training data \citep{vaswani2017attention, brown2020language}. LLMs have demonstrated impressive capabilities in various natural language processing tasks, including text generation, translation, and question-answering.
 
-Large Language Models (LLMs) are advanced artificial intelligence systems trained on vast amounts of text data to generate human-like language. These models utilize deep learning techniques to understand and produce text based on the patterns and structures found in their training data \citep{vaswani2017attention, brown2020language}. Despite their impressive capabilities, LLMs are prone to generating false or misleading statements, a phenomenon we term as "invalidation." Invalidation refers to the production of statements that negate a state of the world either through direct contradiction of evidence or by creating false narratives presented as evidence.
+Despite their remarkable performance, LLMs are prone to generating false or misleading statements, a phenomenon often referred to as "hallucinations" \citep{ji2022survey}. Hallucinations in LLMs can manifest as factual inconsistencies, logical contradictions, or entirely fabricated content that appears plausible \citep{maynez2020faithfulness}. This issue is exacerbated by the lack of a verification mechanism within the models themselves \citep{bender2021dangers, weidinger2021ethical}.
 
-[TO DO: Add contetnt related to falsification and how invalidaiton is different. Check Popper \& Kuhn]
+Several factors contribute to the occurrence of hallucinations, including biases in training data, limitations in knowledge representation, and the models' tendency to prioritize fluency over factual accuracy \citep{lin2022truthfulqa}. The prevalence and impact of hallucinations are significant, with quantitative evaluations revealing that they occur in up to 30\% of generated responses, substantially affecting the trustworthiness of these models \citep{ji2022survey, lin2022truthfulqa}. Moreover, studies have shown that LLMs can generate false information even when explicitly prompted to be truthful \citep{evans2021truthful}, underscoring the challenge of aligning model outputs with factual correctness.
 
-LLMs generate invalidations due to the nature of their training data, which contains both accurate information and falsehoods. When generating responses, LLMs do not inherently distinguish between these categories, leading to the propagation of falsehoods \citep{bender2021dangers, weidinger2021ethical}. This issue is exacerbated by the lack of a verification mechanism within the models themselves.
+To address this problem, researchers have developed various mitigation strategies. These include techniques such as retrieval-augmented generation \citep{lewis2020retrieval}, which aims to ground model responses in external knowledge sources, and self-consistency checks \citep{wang2023self}, which attempt to improve the internal coherence of model outputs. Despite these efforts, hallucinations remain a significant challenge in the development of reliable AI systems.
 
-[TO DO: Referneces to current hallucination descriptions in literature. Most recently called BS.]
+The persistence of this issue highlights the need for ongoing research and development of robust verification methods. As LLMs continue to evolve and find applications in diverse fields, ensuring their factual accuracy and reliability becomes increasingly crucial. This challenge sits at the intersection of natural language processing, knowledge representation, and AI ethics, requiring interdisciplinary approaches to develop comprehensive solutions. 
+
+%===============================================
+\subsection{Invalidation vs. Hallucination}
+%===============================================
+While hallucinations in LLMs have been extensively studied, this paper introduces a novel concept called ``invalidation," which represents a distinct and potentially more insidious form of false information generation. Invalidation differs from hallucination in several key aspects:
+
+1. Nature of Falsehood: Hallucinations are unintentional factual inaccuracies or fabrications, whereas invalidation involves the active negation or disputation of established truths.
+
+2. Presentation of Information: Hallucinations typically result in plausible but incorrect information. In contrast, invalidation often presents alternative facts or misleading evidence that directly contradicts known truths.
+
+3. Impact on Knowledge Systems: Hallucinations may lead to isolated errors, but invalidation has the potential to undermine entire systems of knowledge by creating doubt and confusion about verified facts.
+
+4. Underlying Mechanisms: Hallucinations stem from the model's probabilistic nature and limitations in training data. Invalidation, while not intentional, appears more deliberate due to the emergent behavior of the model and the influence of biased or misleading training data.
+
+For example, a hallucination might involve an LLM incorrectly stating the year of a historical event. Invalidation, on the other hand, might manifest as the LLM generating content that denies well-established scientific facts, such as climate change, by presenting fabricated data or misinterpreting genuine information.
+
+This distinction between hallucination and invalidation is crucial for several reasons:
+
+1. It allows for more targeted mitigation strategies, as the approaches needed to address invalidation may differ from those used for hallucinations.
+
+2. It highlights a potentially more dangerous form of misinformation that could have far-reaching consequences in fields such as science, politics, and public health.
+
+3. It emphasizes the need for more sophisticated verification mechanisms that can not only check factual accuracy but also detect attempts to undermine established knowledge.
+
+To comprehensively understand and address these phenomena, we propose an epistemological framework that categorizes false information generated by LLMs into two distinct types: hallucination and invalidation. This framework helps delineate the nature, causes, and implications of each type, thus guiding the development of targeted mitigation strategies.
+
+%===============================================
+\subsection{Epistemological Framework for False Information}
+%===============================================
+
+1. Hallucination: Characterized by unintentional factual inaccuracies and fabrications due to the probabilistic text generation process. Mitigation strategies include improving training data quality, enhancing model architectures to prioritize factual accuracy, and incorporating real-time fact-checking mechanisms \citep{lewis2020retrieval, wang2023self}. For example, an LLM might generate a fabricated historical event due to the patterns it learned from the training data.
+
+2. Invalidation: Defined by statements that negate or contradict established facts through misleading narratives or false evidence. Addressing invalidation requires methods to cross-verify generated content with credible sources and detect contradictions with known truths. Techniques like retrieval-augmented generation and consistency checks can be effective \citep{evans2021truthful}. For instance, generating false data to deny climate change exemplifies invalidation.
+
+By distinguishing between these two types of false information, this framework not only aids in understanding the underlying mechanisms but also informs the development of more precise and effective countermeasures. Such an approach is critical in enhancing the reliability and trustworthiness of AI-driven language models, particularly as they become increasingly integrated into various domains of society. This framework also highlights important considerations in the broader context of AI ethics and the ongoing development of LLMs.
 
 To address the problem of invalidation, some approaches suggest using multiple LLMs to cross-verify information \citep{li2021multiview}. By generating a consensus among different models, it is possible to reduce the likelihood of false statements. This method leverages the diverse training backgrounds and potential error distributions of multiple models, enhancing the overall accuracy and reliability of the generated content.
 
-[TO DO: Summarize state of the art in consensus]
+%===============================================
+\subsection{Invalidation in Human Discourse and Its Universal Implications}
+%===============================================
 
-\subsection{Invalidation in Human Discourse}
+Invalidation, as observed in LLMs, is not an isolated phenomenon unique to artificial intelligence. Rather, it mirrors a well-documented pattern in human discourse, suggesting a potentially universal cognitive process that transcends the boundaries between artificial and human intelligence.
 
-[TO DO: Clean out a little bit and perhaps articulate consensus in human discourse as an existing mechanism.]
+In social interactions, humans frequently encounter and sometimes generate statements that contradict observable evidence or present fabricated narratives as facts. This phenomenon manifests in various forms, from the denial of scientifically proven phenomena to the propagation of conspiracy theories. The parallel between human and LLM behavior in this regard is striking and warrants deeper exploration.
 
-Invalidation is not unique to artificial intelligence; it is a well-documented phenomenon in human discourse. In social interactions, individuals often encounter statements that contradict observable evidence or present fabricated narratives as facts. This can be seen in various forms, from the denial of scientifically proven phenomena to the spread of conspiracy theories.
+Sociological perspectives offer valuable insights into this phenomenon. \citet{goffman1959presentation} illuminates how individuals shape and present narratives that may invalidate certain states of the world, a process strikingly similar to the way LLMs construct alternative realities. \citet{festinger1957cognitive} theory of cognitive dissonance explains how people manage conflicting information and beliefs, often leading to the dismissal of evidence that contradicts their views - a process that may be analogous to how LLMs prioritize internal consistency over factual accuracy. \citet{cohen2001states} work on states of denial further illustrates how groups may collectively reject realities such as human rights violations, mirroring the way LLMs can generate content that negates established facts.
 
-In the field of sociology, \citet{goffman1959presentation} provides insights into how individuals shape and present narratives that may invalidate certain states of the world. \citet{festinger1957cognitive} explains how people manage conflicting information and beliefs, often leading to the dismissal of evidence that contradicts their views. \citet{cohen2001states} further illustrates how groups may collectively reject realities such as human rights violations.
+The field of media studies and communication theory provides additional parallels. \citet{mcluhan1964understanding} insights into how different media forms influence the dissemination and acceptance of information, including falsehoods, can be extended to understand how the architecture of LLMs shapes their output. \citet{chomsky1988manufacturing} analysis of how mass media shapes public perception by filtering and framing information resonates with the way LLMs process and generate content based on their training data. \citet{gerbner1976cultivation} cultivation theory, examining how prolonged exposure to media content can alter perceptions of reality, offers a framework for understanding how repeated exposure to certain patterns in training data might lead LLMs to generate invalidating content.
 
-Media studies and communication theory also address invalidation. \citet{mcluhan1964understanding} highlights how different media forms can influence the dissemination and acceptance of information, including falsehoods. \citet{chomsky1988manufacturing} discusses how mass media can shape public perception by filtering and framing information. \citet{gerbner1976cultivation} examines how prolonged exposure to media content can alter perceptions of reality, contributing to the spread of false narratives.
+Political science and propaganda studies further illuminate this phenomenon. \citet{arendt1951origins} discussions on the use of propaganda to manipulate public perception find echoes in the way LLMs can generate misleading narratives. \citet{ellul1965propaganda} detailed analysis of how propaganda shapes beliefs and attitudes, leading to the invalidation of certain truths, provides a lens through which we can understand the potential societal impact of LLM-generated invalidations.
 
-Political science and propaganda studies offer additional perspectives. \citet{arendt1951origins} includes discussions on how propaganda is used to manipulate public perception. \citet{ellul1965propaganda} details how these methods shape beliefs and attitudes, leading to the invalidation of certain truths.
+From a cognitive science perspective, \citet{kahneman1974judgment} work on heuristics and biases offers a framework for understanding why both humans and LLMs may accept and generate false narratives. \citet{pinker2002blank} exploration of how ideological beliefs can lead to the rejection of scientific evidence provides insight into the mechanisms behind invalidation in both human and artificial systems.
 
-In cognitive science, \citet{kahneman1974judgment} provides a framework for understanding why individuals may accept false narratives. \citet{pinker2002blank} addresses how ideological beliefs can lead to the rejection of scientific evidence.
+The striking parallels between invalidation in human discourse and in LLMs point to a potentially universal phenomenon rooted in the fundamental processes of information processing and knowledge representation. This similarity suggests that invalidation may not be merely a flaw in AI systems, but rather a manifestation of broader cognitive patterns that emerge in any sufficiently complex information processing system, whether biological or artificial.
 
+Understanding invalidation as a universal phenomenon has profound implications for AI development and our broader understanding of cognition. It suggests that addressing invalidation in LLMs may require insights from diverse fields such as sociology, psychology, and cognitive science, in addition to computer science. Moreover, studying how LLMs produce invalidations may provide new perspectives on human cognitive processes, potentially offering insights into phenomena like confirmation bias, belief perseverance, and the spread of misinformation in human societies.
+
+%===============================================
+\subsection{Goal}
+%===============================================
+In this paper, we... [state the focus and contribution of the manuscript... to be done last based on all pieces that can be harmonized]
+
+%===============================================
+\section{Methods}
+%===============================================
 \subsection{Formalization of Invalidation}
+%===============================================
 
 To systematically study the phenomenon of invalidation, we propose a formal model that quantifies how invalidations propagate within a discursive network. This model considers actors as nodes in a network, with edges representing the exchange of statements. The goal is to understand how actors influence each other and how invalidations spread, eventually reaching an equilibrium state. The subsequent section will detail the methods used to develop and analyze this model, providing a quantitative framework for studying invalidation in both human and artificial contexts.
 
-
-\section{Methods}
-
-To formalize the phenomenon of invalidation within a discursive network, we develop a framework that models the interactions between actors as a series of logical propositions and arguments.
-
+%===============================================
 \subsection{Basic Invalidation Propagation}
+%===============================================
 
 \begin{definition}\label{def:actors_statements}
 \textbf{Actors and Statements.} Let $A = \{a_1, a_2, \ldots, a_n\}$ be the set of actors in the discursive network, and let $S = \{s_1, s_2, \ldots, s_m\}$ be the set of all possible statements in the network, where each statement $s_i$ can be either true or false.
@@ -121,7 +169,7 @@ P(t+1) = T \cdot P(t)
 
 
 \begin{theorem}\label{thm:basic_invalidation_propagation}
-\textbf{Basic Invalidation Propagation.} In the state of equilibrium of the system, the proportion of actors holding belief $s_1$ and the proportion of actors holding belief $s_2$ are given by:
+\textbf{Basic Invalidation Propagation.} The state of equilibrium of  the system described by Equation \ref{eq:state_vector_evolution} is a stable fixed point given by:
 \[
 P = \begin{pmatrix}
 \frac{p_{21}}{p_{12} + p_{21}} \\
@@ -139,33 +187,35 @@ This can be written as a system of linear equations:
 %
 \begin{equation}\label{eq:linear_system}
     \begin{pmatrix}
-        P_1 \\ P_2
-    \end{pmatrix}.
+        P_1 \\ 
+        P_2
+    \end{pmatrix}
     = 
     \begin{pmatrix}
-        1 - p_{12} & p_{12} \\
-        p_{21} & 1 - p_{21}
+        1 - p_{12} & p_{21} \\
+        p_{12} & 1 - p_{21}
     \end{pmatrix}
     \begin{pmatrix}
-    P_1 \\ P_2
-    \end{pmatrix}.
+        P_1 \\ 
+        P_2
+    \end{pmatrix},
 \end{equation}
 %
-This gives us two equations:
+or in agebraic form
 %
 \begin{align}
-    P_1 (1 - p_{12}) + P_2 p_{12} & = P_1 \label{eq:equilibrium_eq1}, \\
-    P_1 p_{21} + P_2 (1 - p_{21}) & = P_2 \label{eq:equilibrium_eq2}.
+    P_1 & = (1 - p_{12}) P_1  +  p_{21} P_2 \label{eq:equilibrium_eq1}, \\
+    P_2 & = p_{12} P_1  +  (1 - p_{21}) P_2 \label{eq:equilibrium_eq2}.
 \end{align}
 %
-Re-arraging, we obtain 
+Rearraging, we obtain 
 %
 \begin{align}
-    P_1 - P_1 p_{12} + P_2 p_{12} & = P_1, \\
-    P_1 p_{21} + P_2 - P_2 p_{21} & = P_2.  
+    P_1 & = P_1 - p_{12} P_1  + p_{21} P_2, \\
+    P_2 & = p_{12} P_1  + P_2 - p_{21} P_2.  
 \end{align}
 %
-Subtract $P_1$ from both sides of the first equation and simplify:
+Ssimplifying, 
 %
 \begin{align}
     - P_1 p_{12} + P_2 p_{12} &= 0 \label{eq:equilibrium_simplify1} \\
@@ -207,12 +257,19 @@ P_2
 \begin{pmatrix}
 \frac{p_{21}}{p_{12} + p_{21}} \\
 \frac{p_{12}}{p_{12} + p_{21}}
-\end{pmatrix}
+\end{pmatrix}.
 \end{equation}
 %
-This completes the proof. \(\square\)
 
-\textbf{Interpretation:} When $p_{12} > p_{21}$, i.e., when the probability of transitioning from $s_1$ to $s_2$ is higher than the probability of transitioning from $s_2$ to $s_1$, more actors will shift their belief from $s_1$ to $s_2$ than from $s_2$ to $s_1$ over time.
+Since system \ref{eq:state_vector_evolution} is linear, its stability can be assessed by determining the values of the roots of the characteristic polynomial resulting from assessing $\det(T-\lambda I) = 0$. The characteristic polynomial is 
+%
+\[
+    {\lambda}^{2} + (p_{12} + p_{21} - 2) \, \lambda + 1 - p_{12}-p_{21}  = 0,
+\]
+%
+resulting in the roots $\{1, 1 - p_{12}-p_{21}\}$. The stability of the first root is undecidable, but the secodn root is clearly less than one, which is the necessary and sufficient condition for stability fo discrete dynamical systems. Thus, the fixed point is stable. This completes the proof. \(\square\)
+
+\textbf{Interpretation:} The proportion of actors holding belief $s_1$ is $P_1$ and the proportion of actors holding belief $s_2$ is $P_2$. When $p_{12} > p_{21}$, i.e., when the probability of transitioning from $s_1$ to $s_2$ is higher than the probability of transitioning from $s_2$ to $s_1$, more actors will shift their belief from $s_1$ to $s_2$ than from $s_2$ to $s_1$ over time.
 
 
 \textbf{$P_1$ (Proportion of actors holding belief $s_1$)}: $P_1 = \frac{p_{21}}{p_{12} + p_{21}}$. Since $p_{12} > p_{21}$, $P_1$ will be less than 0.5. This means that fewer actors will hold belief $s_1$ at equilibrium compared to belief $s_2$.
@@ -221,165 +278,226 @@ This completes the proof. \(\square\)
 
 In summary, when $p_{12} > p_{21}$, the system will reach an equilibrium where the proportion of actors holding the belief $s_2$ is higher than the proportion of actors holding the belief $s_1$. This reflects the higher likelihood of actors transitioning from $s_1$ to $s_2$ compared to the reverse.
 
+
 %===============================================
-\subsection{Invalidation Model with Interaction Considerations}
+\subsection{Cross-Network Invalidation Detection Model}
+%===============================================
 
-This section proposes a Markov chain model designed to capture the dynamics of belief systems within a discursive network, with a particular focus on the effects of interaction frequencies and the challenge of countering false beliefs.
+We present an enhanced model of two interconnected discursive networks, each with the capacity to generate falsehoods internally and detect falsehoods in the other network. This refined model incorporates time-dependent parameters, accounts for network size effects, and allows for asymmetry between networks.
 
-\subsubsection{Definitions}
-\begin{definition}
-\textbf{Actors and Statements.} Let \(A = \{a_1, a_2, \ldots, a_n\}\) be the set of actors in the discursive network, and let \(S = \{s_1, s_2\}\) be the set of statements, where \(s_1\) represents true statements and \(s_2\) represents false statements that are easier to spread.
+\begin{definition}\label{def:cross_networks}
+\textbf{Dual Networks.} Let $N_1$ and $N_2$ be two discursive networks, with sets of actors $A_1 = \{a_{11}, a_{12}, ..., a_{1n_1}\}$ and $A_2 = \{a_{21}, a_{22}, ..., a_{2n_2}\}$ respectively, where $n_1$ and $n_2$ are the number of actors in each network. 
 \end{definition}
 
-\begin{definition}\label{def:transition_probabilities}
-\textbf{Transition Probabilities.} Define \(p_{12}(t)\) as the probability that an actor transitions from believing in \(s_1\) to \(s_2\) at time \(t\), and \(p_{21}(t)\) as the probability of transitioning from \(s_2\) back to \(s_1\).
-
-The probabilities for transitioning between belief states are defined dynamically as functions of the number of interactions involving the statement \(s_2\):
-\[
-p_{12}(t) = \frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)},
-\]
-\[
-p_{21}(t) = k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right),
-\]
-where \(P_{2}(t)\) is the proportion of actors who adopt statement \(s_2\), and \(\alpha\), \(\beta\), \(k_{21}\), and \(\gamma\) are parameters that adjust the sensitivity and responsiveness of the transition probabilities to the prevalence of \(s_2\).
-\end{definition}
-
-\begin{proposition}\label{prop:model_formulation_frequency}
-\textbf{Model Formulation:} The transition dynamics of the discursive network are governed by the Markov transition matrix \(T(t)\), where the transition probabilities are dynamically adjusted based on interaction data:
-\[
-T(t) = \begin{pmatrix}
-1 - p_{12}(t) & p_{12}(t) \\
-p_{21}(t) & 1 - p_{21}(t)
-\end{pmatrix}
-\]
+\begin{proposition}\label{prop:network_state}
+\textbf{Network State.} The state of each network $N_k$ at time $t$ is represented by $S_k(t) = (T_k(t), F_k(t))$, where $T_k(t)$ is the number of true statements and $F_k(t)$ is the number of false statements in network $N_k$ at time $t$.
 \end{proposition}
 
-\begin{theorem}\label{thm:basic_invalidation_propagation}
-    \textbf{Frequency-based Invalidation Propagation.} Model \ref{prop:model_formulation_frequency} has at least one point of qeuilibrium given by
-    \[
-        P = \begin{pmatrix}
-            P_1 \\
-            P_2
-            \end{pmatrix}
-            =
-            \begin{pmatrix}
-            \frac{k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)}{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)} + k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)} \\
-            \frac{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)}}{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)} + k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)}
-            \end{pmatrix}    \]
-    if $\frac{\alpha}{\kappa \beta} \leq 1$. 
-\end{theorem}
+\begin{proposition}\label{prop:falsehood_generation}
+\textbf{Falsehood Generation.} Let $\lambda_k(t)$ be the rate at which new falsehoods are generated in network $N_k$ at time $t$, influenced by network dynamics and external factors. The number of new falsehoods generated in network $N_k$ at time $t$, denoted by $X_k(t)$, follows a Poisson distribution:
 
-\textbf{Proof.}  
-Applying Theorem \ref{thm:basic_invalidation_propagation} and Definition \ref{def:transition_probabilities}, 
-%
-\begin{equation}\label{eq:equilibrium_proportions}
-    P = \begin{pmatrix}
-    P_1 \\
-    P_2
-    \end{pmatrix}
-    =
-    \begin{pmatrix}
-    \frac{k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)}{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)} + k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)} \\
-    \frac{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)}}{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)} + k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)}
-    \end{pmatrix}
+\begin{equation}
+X_k(t) \sim \text{Poisson}(\lambda_k(t))
 \end{equation}
-%
-Since $P_1 + P_2 = 1$, we simply need to solve for one of them. We focus intially on $P_2$, so that 
-\[
-    P_{2} = \frac{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)}}{\frac{\alpha \cdot P_{2}(t)}{\beta + P_{2}(t)} + k_{21} \cdot \exp\left(-\gamma \cdot P_{2}(t)\right)}
-\]
-%
-Algebraic manipulaiton produces the transcendental equation
-\[
-    \exp(-\gamma P_2) = \frac{\alpha}{\kappa} \cdot \frac{1-P_2}{P_2 + \beta},
-\]
-where $\gamma$, $\alpha$, $\kappa$, and $\beta$ are positive constants. The left-hand side (LHS), $\exp(-\gamma P_2)$, is an exponential decay function that decreases monotonically from 1 to 0 as $P_2$ increases from 0 towards infinity. The right-hand side (RHS), $\frac{\alpha}{\kappa} \cdot \frac{1-P_2}{P_2 + \beta}$, is a rational function that also decreases monotonically but approaches $-\frac{\alpha}{\kappa}$ as $P_2$ tends to infinity.
-
-\textbf{Initial Conditions for Intersection}: The condition $\frac{\alpha}{\kappa \beta} \leq 1$ must be met for the initial values to ensure that an intersection occurs. This condition positions the starting value of the RHS at or below the starting point of the LHS, enabling at least one intersection as guaranteed by the Intermediate Value Theorem.
-
-\textbf{Exploring Rates of Decrease}
-The derivatives of the functions are:
-\begin{align*}
-    \text{LHS Derivative: } & -\gamma \exp(-\gamma P_2) \quad \text{(always negative)}, \\
-    \text{RHS Derivative: } & -\frac{\alpha}{\kappa} \cdot \frac{\beta + 1}{(P_2 + \beta)^2} \quad \text{(also always negative)}.
-\end{align*}
-These derivatives confirm that both functions decrease continuously, albeit at rates that differ significantly. The LHS, with its exponential form, decreases at a rate directly proportional to its current value, resulting in a swift initial decline that progressively slows but never halts.
-
-\textbf{Long-Term Behavior and Multiple Intersections}: 
-In the long-term, the significant aspect arises from the interaction between the different asymptotic behaviors of the LHS and RHS. While the LHS rapidly approaches zero, the RHS more gradually approaches its negative asymptote of $-\frac{\alpha}{\kappa}$. This disparity in how they approach their respective limits—particularly the slower approach of the RHS to its negative limit—creates a scenario where, depending on parameter values, the RHS could initially decrease faster than the LHS and then slow its rate of decline, allowing the LHS, which continues its steady descent towards zero, to potentially intersect the RHS again.
-
-%\textbf{Parameter Influence and Simulations}:  The behavior and intersection points of these functions are highly dependent on the values of $\gamma$, $\alpha$, $\kappa$, and $\beta$. Variations in these parameters can significantly affect the rate at which each function approaches its limit, thereby influencing the number and exact locations of intersections. Numerical simulations alongside analytical approaches are recommended to explore these effects comprehensively and to visualize how different parameter settings change the interaction dynamics between the functions.
-
-This completes the proof. \(\square\)
-
-%===============================================
-\subsection{Invalidation Propagation with Energy Consideration}
-
-\begin{definition}\label{def:energy_dynamics}
-\textbf{Energy Dynamics.} Let \( E_i(t) \) be the energy budget of actor \( i \) at time \( t \). We assume that \( s_1 \) is a statement that reflects a true state of the world, and \( s_2 \) is a statement that invalidates a true state of the world. Verification of \( s_1 \) depletes energy by \( e_{s1} \), and verification of \( s_2 \) depletes energy by \( e_{s2} \), with \( e_{s1} > e_{s2} \). Energy is replenished at a constant rate \( r \) per unit time. The energy budget \( E_i(t) \) remains constant over time. For \( s_1 \): \( E_i(t+1) = E_i(t) + r - e_{s1} \). For \( s_2 \): \( E_i(t+1) = E_i(t) + r - e_{s2} \).
-\end{definition}
-
-\begin{definition}\label{def:interaction_frequencies}
-\textbf{Interaction Frequencies and Transition Probabilities.} Let \( f_{i,s1}(t) \) be the frequency of interactions with \( s_1 \) for actor \( i \), and \( f_{i,s2}(t) \) be the frequency of interactions with \( s_2 \) for actor \( i \). Let \( p_{12}(t) \) and \( p_{21}(t) \) be functions of interaction frequencies such that \( p_{12}(t) = k_{12} \cdot f_{i,s2}(t) \) and \( p_{21}(t) = k_{21} \cdot f_{i,s1}(t) \).
-\end{definition}
-
-\begin{definition}\label{def:equilibrium_conditions}
-\textbf{Equilibrium Conditions.} At equilibrium, the system reaches a steady state where the frequencies of interactions with \( s_1 \) and \( s_2 \) stabilize. Thus, \( f_{i,s1}(t+1) = f_{i,s1}(t) \), and \( f_{i,s2}(t+1) = f_{i,s2}(t) \). Let \( P_{s1} \) be the proportion of actors holding \( s_1 \) at equilibrium, and \( P_{s2} \) be the proportion of actors holding \( s_2 \) at equilibrium. Since \( P_{s1} + P_{s2} = 1 \), we only need to solve for one of them.
-\end{definition}
-
-
-\begin{proposition}\label{prop:model_formulation_energy}
-    \textbf{Model Formulation.} The dynamical system governing the interactions and energy dynamics in the discursive network is defined by the discrete update equations governing the change in belief states over time. Let \( P(t) \) be the vector representing the proportions of actors holding each belief at time \( t \), and \( E(t) \) represent the energy levels of actors at time \( t \). The transition matrix \( T(t) \), dependent on the interaction frequencies, energy levels, and energy costs of verifying statements, is defined as:
-    \[
-    T(t) = \begin{pmatrix}
-    1 - k_{12} \cdot f_{i,s2}(t) \cdot e_{s2}/E_i(t) & k_{21} \cdot f_{i,s1}(t) \cdot e_{s1}/E_i(t) \\
-    k_{12} \cdot f_{i,s2}(t) \cdot e_{s2}/E_i(t) & 1 - k_{21} \cdot f_{i,s1}(t) \cdot e_{s1}/E_i(t)
-    \end{pmatrix}
-    \]
-    The system evolves according to:
-    \[
-    P(t+1) = P(t) \cdot T(t)
-    \]
-    This formulation takes into account that the verification of each statement consumes a portion of the actor's energy budget, which affects their ability to transition between belief states. The energy cost \( e_{s1} \) and \( e_{s2} \) for verifying \( s_1 \) and \( s_2 \) are normalized by the actor’s current energy level \( E_i(t) \), reflecting how energy constraints can impact decision-making processes.
 \end{proposition}
-    
-\begin{theorem}\label{thm:invalidation_energy}
-\textbf{Invalidation Propagation with Energy Consideration.} In the state of equilibrium of the refined system with energy considerations, the proportion of actors holding belief \( s_1 \) and the proportion of actors holding belief \( s_2 \) are given by:
-\[
-P = \begin{pmatrix}
-\frac{k_{21} \cdot c_{s1}}{k_{12} \cdot c_{s2} + k_{21} \cdot c_{s1}} \\
-\frac{k_{12} \cdot c_{s2}}{k_{12} \cdot c_{s2} + k_{21} \cdot c_{s1}}
-\end{pmatrix}
-\]
+
+\begin{proposition}\label{prop:cross_detection}
+\textbf{Cross-Network Detection.} Let $d_{jk}(t)$ be the probability that a falsehood in network $N_k$ is detected by an actor in network $N_j$ at time $t$. The number of falsehoods detected and removed from network $N_k$ by network $N_j$ at time $t$, denoted by $Y_{jk}(t)$, follows a Binomial distribution:
+
+\begin{equation}
+Y_{jk}(t) \sim \text{Binomial}(F_k(t), d_{jk}(t))
+\end{equation}
+\end{proposition}
+
+\begin{proposition}\label{prop:internal_dynamics}
+\textbf{Internal Dynamics.} Let $p_k(t)$ be the probability that a true statement in network $N_k$ becomes false at time $t$, and $q_k(t)$ be the probability that a false statement in network $N_k$ is corrected to become true at time $t$. The number of true statements becoming false, $Z_k(t)$, and false statements becoming true, $W_k(t)$, in network $N_k$ at time $t$ follow Binomial distributions:
+
+\begin{equation}
+Z_k(t) \sim \text{Binomial}(T_k(t), p_k(t))
+\end{equation}
+\begin{equation}
+W_k(t) \sim \text{Binomial}(F_k(t), q_k(t))
+\end{equation}
+\end{proposition}
+
+The evolution of the network states can be described by the following stochastic difference equations:
+
+\begin{equation}\label{eq:true_statements_evolution}
+T_k(t+1) = T_k(t) - Z_k(t) + W_k(t)
+\end{equation}
+
+\begin{equation}\label{eq:false_statements_evolution}
+F_k(t+1) = F_k(t) + X_k(t) + Z_k(t) - W_k(t) - Y_{jk}(t)
+\end{equation}
+
+\begin{theorem}\label{thm:expected_equilibrium}
+\textbf{Expected Equilibrium State.} The expected equilibrium state of network $N_k$ is given by:
+
+\begin{equation}
+E[T_k^*] = \frac{q_k^* n_k}{p_k^* + q_k^*} - \frac{\lambda_k^* n_k}{d_{jk}^*(p_k^* + q_k^*)}
+\end{equation}
+
+\begin{equation}
+E[F_k^*] = \frac{\lambda_k^* n_k}{d_{jk}^*}
+\end{equation}
+
+where $n_k = E[T_k^*] + E[F_k^*]$ is the expected total number of statements in network $N_k$ at equilibrium, and $\lambda_k^*, d_{jk}^*, p_k^*, q_k^*$ are the long-term average values of the respective time-dependent parameters.
 \end{theorem}
 
-\textbf{Proof.} To perform a stability analysis of the discrete dynamical system with energy considerations, we explore whether the system converges to a stable equilibrium under the defined transition matrix \( T(t) \)....
 
+\begin{proof}
+    \textbf{Step 1: Equilibrium Conditions}
+    
+    At equilibrium, the expected changes in true and false statements should be zero:
+    
+    \begin{equation}\label{eq:equilibrium_true}
+    E[Z_k] = E[W_k]
+    \end{equation}
+    
+    \begin{equation}\label{eq:equilibrium_false}
+    E[X_k] = E[Y_{jk}] + E[W_k] - E[Z_k]
+    \end{equation}
+    
+    \textbf{Step 2: Expected Values and Distribution Justifications}
+    
+    Express the expected values for each random variable, with detailed justifications for the choice of distributions:
+    
+    \begin{align}
+    E[X_k] &= \lambda_k^* \quad \text{(Poisson distribution mean)} \\
+    E[Y_{jk}] &= F_k^* \cdot d_{jk}^* \quad \text{(Binomial distribution mean)} \\
+    E[Z_k] &= T_k^* \cdot p_k^* \quad \text{(Binomial distribution mean)} \\
+    E[W_k] &= F_k^* \cdot q_k^* \quad \text{(Binomial distribution mean)}
+    \end{align}
+    
+    1. $E[X_k] = \lambda_k^*$ (Poisson distribution mean):
+       - The Poisson distribution is used to model the number of events occurring in a fixed interval of time or space, given a known average rate. In this case, $X_k$ represents the number of new falsehoods generated in network $N_k$. The parameter $\lambda_k^*$ is the average rate of falsehood generation at equilibrium.
+    
+    2. $E[Y_{jk}] = F_k^* \cdot d_{jk}^*$ (Binomial distribution mean):
+       - $Y_{jk}$ represents the number of falsehoods in network $N_k$ detected by network $N_j$. This follows a Binomial distribution because each false statement in $N_k$ has a fixed probability $d_{jk}^*$ of being detected by $N_j$.
+    
+    3. $E[Z_k] = T_k^* \cdot p_k^*$ (Binomial distribution mean):
+       - $Z_k$ represents the number of true statements in network $N_k$ that become false. This also follows a Binomial distribution because each true statement has a fixed probability $p_k^*$ of becoming false.
+    
+    4. $E[W_k] = F_k^* \cdot q_k^*$ (Binomial distribution mean):
+       - $W_k$ represents the number of false statements in network $N_k$ that are corrected to become true. This follows a Binomial distribution as well, with $F_k^*$ false statements each having a probability $q_k^*$ of being corrected.
+    
+    \textbf{Step 3: Substitute Expected Values}
+    
+    Substitute these into our equilibrium equations:
+    
+    \begin{equation}\label{eq:equilibrium_true_substituted}
+    T_k^* \cdot p_k^* = F_k^* \cdot q_k^*
+    \end{equation}
+    
+    \begin{equation}\label{eq:equilibrium_false_substituted}
+    \lambda_k^* = F_k^* \cdot d_{jk}^* + F_k^* \cdot q_k^* - T_k^* \cdot p_k^*
+    \end{equation}
+    
+    \textbf{Step 4: Solve for $F_k^*$ in terms of $T_k^*$}
+    
+    From Equation \ref{eq:equilibrium_true_substituted}:
+    
+    \begin{equation}\label{eq:Fk_in_terms_of_Tk}
+    F_k^* = T_k^* \cdot \frac{p_k^*}{q_k^*}
+    \end{equation}
+    
+    \textbf{Step 5: Total Statements}
+    
+    The total number of statements $n_k$ is the sum of true and false statements:
+    
+    \begin{align}
+    n_k &= T_k^* + F_k^* \\
+    &= T_k^* + T_k^* \cdot \frac{p_k^*}{q_k^*} \\
+    &= T_k^* \cdot \left(1 + \frac{p_k^*}{q_k^*}\right) \\
+    &= T_k^* \cdot \frac{p_k^* + q_k^*}{q_k^*}
+    \end{align}
+    
+    \textbf{Step 6: Solve for $T_k^*$}
+    
+    Rearranging the last equation from Step 5:
+    
+    \begin{equation}\label{eq:Tk_star}
+    T_k^* = n_k \cdot \frac{q_k^*}{p_k^* + q_k^*}
+    \end{equation}
+    
+    \textbf{Step 7: Solve for $F_k^*$}
+    
+    Substitute Equation \ref{eq:Tk_star} into Equation \ref{eq:Fk_in_terms_of_Tk}:
+    
+    \begin{align}
+    F_k^* &= T_k^* \cdot \frac{p_k^*}{q_k^*} \\
+    &= n_k \cdot \frac{q_k^*}{p_k^* + q_k^*} \cdot \frac{p_k^*}{q_k^*} \\
+    &= n_k \cdot \frac{p_k^*}{p_k^* + q_k^*}
+    \end{align}
+    
+    \textbf{Step 8: Use Equilibrium False Equation}
+    
+    From Equation \ref{eq:equilibrium_false_substituted}, substitute the expressions for $F_k^*$ and $T_k^*$:
+    
+    \begin{align}
+    \lambda_k^* &= F_k^* \cdot d_{jk}^* + F_k^* \cdot q_k^* - T_k^* \cdot p_k^* \\
+    &= n_k \cdot \frac{p_k^*}{p_k^* + q_k^*} \cdot d_{jk}^* + n_k \cdot \frac{p_k^*}{p_k^* + q_k^*} \cdot q_k^* - n_k \cdot \frac{q_k^*}{p_k^* + q_k^*} \cdot p_k^*
+    \end{align}
+    
+    Here, we clearly show the intermediate steps of substitution.
+    
+    \textbf{Step 9: Simplify}
+    
+    Combine terms and simplify, showing each algebraic step:
+    
+    \begin{align}
+    \lambda_k^* &= n_k \cdot \frac{p_k^* d_{jk}^* + p_k^* q_k^* - q_k^* p_k^*}{p_k^* + q_k^*} \\
+    &= n_k \cdot \frac{p_k^* (d_{jk}^* + q_k^* - q_k^*)}{p_k^* + q_k^*} \\
+    &= n_k \cdot \frac{p_k^* d_{jk}^*}{p_k^* + q_k^*}
+    \end{align}
+    
+    \textbf{Step 10: Explicit Derivation for $F_k^*$}
+    
+    Rearrange the last equation to solve for $F_k^*$:
+    
+    \begin{align}
+    \lambda_k^* &= n_k \cdot \frac{p_k^* d_{jk}^*}{p_k^* + q_k^*} \\
+    \Rightarrow F_k^* &= \frac{\lambda_k^* \cdot (p_k^* + q_k^*)}{d_{jk}^*}
+    \end{align}
+    
+    \textbf{Step 11: Final $T_k^*$}
+    
+    Subtract $F_k^*$ from $n_k$ to get the final expression for $T_k^*$:
+    
+    \begin{align}
+    T_k^* &= n_k - F_k^* \\
+    &= n_k - \frac{\lambda_k^* \cdot (p_k^* + q_k^*)}{d_{jk}^*} \\
+    &= n_k \cdot \left(1 - \frac{\lambda_k^*}{d_{jk}^*}\right) \\
+    &= \frac{q_k^* \cdot n_k}{p_k^* + q_k^*} - \frac{\lambda_k^* \cdot n_k}{d_{jk}^* \cdot (p_k^* + q_k^*)}
+    \end{align}
+    
+    This completes the proof, deriving the expressions for $E[T_k^*]$ and $E[F_k^*]$ as stated in the theorem. \(\square\)
+\end{proof}
+    
 
-The characteristic equation of \( T(t) \) is obtained by setting the determinant of \( T(t) - \lambda I \) to zero:
-\[
-\det(T(t) - \lambda I) = \det\begin{pmatrix}
-1 - k_{12} f_{s2}(t) \frac{e_{s2}}{E_i(t)} - \lambda & k_{21} f_{s1}(t) \frac{e_{s1}}{E_i(t)} \\
-k_{12} f_{s2}(t) \frac{e_{s2}}{E_i(t)} & 1 - k_{21} f_{s1}(t) \frac{e_{s1}}{E_i(t)} - \lambda
-\end{pmatrix} = 0
-\]
+\textbf{Interpretation and Analysis:}
 
-The roots of the characteristic polynomial are 
-\[
-\lambda_{1,2} = \left\{  1,  1 - \frac{e_{s1}  f_{s1} k_{21} + e_{s2} f_{s2}  k_{12} }{E_i} \right\}
-\]
+1. Falsehood Generation vs. Detection: The ratio $\frac{\lambda_k^*}{d_{jk}^*}$ represents the balance between falsehood generation and cross-network detection. A higher ratio leads to more false statements at equilibrium.
 
-IN PROGRESS...
+2. Network Size Effect: Larger networks (higher $n_k$) can sustain more true and false statements at equilibrium. The number of false statements is now proportional to network size, reflecting increased opportunities for falsehood generation in larger discourse spaces.
 
-This completes the proof. \(\square\)
+3. Internal Dynamics: The ratio $\frac{q_k^*}{p_k^* + q_k^*}$ represents the proportion of non-false statements that are true at equilibrium due to internal dynamics.
 
-\textbf{Interpretation:} Higher energy consumption for $s_1$ leads to lower interaction frequencies $f_{s1}$, reducing $P_{s1}$. More frequent interactions with $s_2$ increase $P_{s2}$, making actors more likely to hold $s_2$. Higher transition constants $k_{12}$ or $k_{21}$ increase the rate of transitions, affecting the equilibrium proportions. In summary, the equilibrium analysis reveals that the proportion of actors holding $s_1$ or $s_2$ depends on the interaction frequencies, energy costs, and transition probabilities. These factors determine how beliefs propagate and stabilize in the network.
+4. Cross-Network Efficiency: Higher detection probabilities $d_{jk}^*$ lead to fewer false statements, highlighting the importance of cross-network scrutiny.
+
+5. Asymmetry: Differences in parameters between networks can lead to asymmetric equilibrium states, potentially modeling real-world scenarios where one network is more susceptible to falsehoods or more efficient at detection.
+
+6. Time-Dependent Dynamics: The model now captures how falsehood generation, detection, and internal correction processes may vary over time, allowing for more realistic modeling of network behavior.
+
+7. Stochastic Nature: The use of Poisson and Binomial distributions introduces inherent randomness, reflecting the unpredictable nature of falsehood generation and detection in real-world scenarios.
+
 
 
 %===============================================
 \section{Results}
-%-----------------------------------------------
+%===============================================
 \subsection{Numerical Simulations}
+%===============================================
 
 [TO DO: Read, digest, ensure it is correct.]
 
@@ -400,14 +518,15 @@ The simulation runs over a predefined number of time steps, updating the belief 
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\textwidth]{FOO_Figure4.png}
+    \includegraphics[width=0.8\textwidth]{FOO_Figure2.png}
     \caption{Evolution of beliefs over time, showcasing the dynamic changes in the network based on the specified interaction parameters.}
     \label{fig:evolution_of_beliefs_4}
 \end{figure}
 
 
-%-----------------------------------------------
+%===============================================
 \subsection{Invalidation Consensus Algorithm}
+%===============================================
 The following sections detail a methodology for handling requests using multiple Large Language Models (LLMs) to ensure a high reliability and consistency in the responses generated by distributed systems. This approach is critical in scenarios where decision-making requires integration of diverse perspectives or knowledge bases, as often encountered in complex AI systems.
 
 The process initiates with a request which acts as an input requiring processing. This request is then distributed among several instances of LLMs, labeled as LLM$_1$ to LLM$_n$. Each of these models processes the request independently and generates respective outputs, denoted as O$_1$ to O$_n$. Following the processing, all outputs are collected and assembled for a comparison.
@@ -419,7 +538,9 @@ The algorithm presented in our study is closely aligned with the invalidation mo
 The invalidation model we introduced operates on a Markov chain framework that depicts the stochastic transitions between belief states in a network of actors. These states are significantly influenced by true statements (\(s_1\)) and false statements (\(s_2\)), wherein the interactions among actors can either reinforce or alter their current beliefs.
 
 
+%===============================================
 \subsubsection{Algorithm Steps and Their Functions}
+%===============================================
 \begin{enumerate}
     \item \textbf{Initialization and Distribution}: The process starts by initializing a request, symbolizing the input or stimulus that prompts interaction within the network. This request is distributed among various instances of large language models (LLMs), simulating the diverse responses of actors within the network.
     
@@ -430,10 +551,11 @@ The invalidation model we introduced operates on a Markov chain framework that d
     \item \textbf{Consensus and Response Generation}: If significant differences are detected, the algorithm injects consensus instructions and reiterates the process, reflecting the ongoing adjustments and interactions in the network as actors influence each other and gradually move towards a common understanding or belief. If no significant differences are detected, a response based on collective outputs is generated, signifying the stabilization of beliefs across the network.
 \end{enumerate}
 
+%===============================================
 \subsubsection{Integration with Invalidation Dynamics}
+%===============================================
 The algorithm effectively integrates the dynamics of invalidation by considering how false information (represented by \(s_2\)) can influence the network's belief system and how true information (represented by \(s_1\)) can be reasserted. The use of LLMs to simulate this process provides a robust framework for exploring the complex interplay of information dissemination, belief formation, and change within large, interactive networks.
 
-The following algorithm encapsulates the steps described above in a formal representation, suitable for implementation in a software system.
 
 \begin{algorithm}
 \caption{Consensus-based Response Generation using Multiple LLMs}
@@ -521,7 +643,9 @@ The following algorithm encapsulates the steps described above in a formal repre
     
 \end{tikzpicture}
 
+%===============================================
 \section{Conclusion}
+%===============================================
 
 [TO DO: Clean up conclusions. Ensure that we cite the context int he intro, and address how this approach improves over the state of the  art.]
 
@@ -532,6 +656,12 @@ To connect the refined model of belief propagation and verification energy to la
 Using multiple LLMs to spot falsehoods can be more effective than relying on a single model due to several factors that align with our refined model of belief propagation and verification energy. Multiple LLMs trained on different datasets or with different architectures can provide diverse perspectives. When multiple models analyze the same statement, they can cross-verify the information. If one model generates an $s_2$ statement, other models can provide additional context or challenge the falsehood based on their own learned patterns, similar to increasing the interaction frequency with true statements ($s_1$) in our model. Relying on a single LLM increases the risk of errors or biases inherent in that model’s training data. By consulting multiple models, we can reduce the likelihood of propagating falsehoods as different models may have different biases and strengths, leading to a more balanced and accurate output. In our model, verification energy depletes quickly when verifying true statements. Multiple LLMs can distribute this verification load. If verifying $s_1$ depletes energy, having multiple models can effectively pool their verification capacities, ensuring that the energy required to confirm the truth is distributed and managed better. This is analogous to having a collaborative verification process where the burden is shared. When multiple LLMs are used to evaluate a statement, we can derive a consensus based on the majority or weighted agreement. If most models agree that a statement is true or false, this consensus can act as a more reliable indicator than a single model’s output. This is similar to how higher interaction frequencies with true statements ($s_1$) in our model increase the likelihood of actors adopting $s_1$.
 
 By connecting the refined model of belief propagation to the behavior of LLMs, we can better understand the generation and detection of false statements. LLMs generate false statements due to the probabilistic nature of their training data, analogous to how $s_2$ statements propagate more easily in a network with lower verification energy. Using multiple LLMs for falsehood detection is effective because it distributes the verification load, leverages diverse perspectives, and reduces individual biases, akin to increasing the interaction frequency with true statements and sharing verification energy in our model. This approach aligns with our understanding that collaborative verification and diverse interactions enhance the detection and correction of falsehoods in both human networks and AI systems.
+
+Future research directions could include exploring additional techniques to mitigate invalidation, assessing the effectiveness of existing strategies in real-world applications, and examining the ethical implications of false information generated by LLMs. Addressing these challenges is essential for the responsible deployment and use of AI technologies.
+
+The parallel between invalidation in LLMs and human discourse opens up new avenues for interdisciplinary research. It challenges us to consider invalidation not as a unique flaw of AI, but as a fundamental aspect of information processing that manifests across different types of cognitive systems. This perspective not only enriches our understanding of AI behavior but also provides a novel lens through which to examine human cognition and social dynamics.
+
+The models presented for invalidaiton propagation provide a comprehensive framework for analyzing the dynamics of falsehood generation, propagation, and detection in isolated and interconnected discursive networks. It allows for the exploration of various scenarios by adjusting parameters such as falsehood generation rates, detection probabilities, and internal correction processes. Future work could focus on extending this model to include more complex network structures, heterogeneous actor behaviors, or the impact of targeted misinformation campaigns. Additionally, empirical studies could help validate the model's assumptions and refine its parameters for specific real-world contexts.
 
 \bibliographystyle{plainnat}  
 \bibliography{references}
