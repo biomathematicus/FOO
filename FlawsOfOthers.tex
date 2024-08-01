@@ -14,15 +14,15 @@
 
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
-
-\theoremstyle{plain}
+%\theoremstyle{plain}
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{proposition}{Proposition}[section]
 \newtheorem{lemma}{Lemma}[section]
+\newtheorem{remark}{Remark}[section]
 
 \title{The Flaws of Others}
 \author{
-    Juan B. Gutiérrez\footnote{\href{mailto:juan.gutierrez3@utsa.edu}{juan.gutierrez3@utsa.edu} Department of Mathematics, University of Texas at San Antonio.}
+    Juan B. Gutiérrez\footnote{\href{mailto:juan.gutierrez3@utsa.edu}{juan.gutierrez3@utsa.edu} Department of Mathematics, University of Texas at San Antonio.}  \phantom{ } and ... (add your name)
     % 
     %nd 
     %
@@ -267,7 +267,7 @@ Since system \ref{eq:state_vector_evolution} is linear, its stability can be ass
     {\lambda}^{2} + (p_{12} + p_{21} - 2) \, \lambda + 1 - p_{12}-p_{21}  = 0,
 \]
 %
-resulting in the roots $\{1, 1 - p_{12}-p_{21}\}$. The stability of the first root is undecidable, but the secodn root is clearly less than one, which is the necessary and sufficient condition for stability fo discrete dynamical systems. Thus, the fixed point is stable. This completes the proof. \(\square\)
+resulting in the roots $\{1, 1 - p_{12}-p_{21}\}$. The stability of the first root is undecidable, but the second root is clearly less than one, which is the necessary and sufficient condition for stability fo discrete dynamical systems. Thus, the fixed point is stable. This completes the proof. \(\square\)
 
 \textbf{Interpretation:} The proportion of actors holding belief $s_1$ is $P_1$ and the proportion of actors holding belief $s_2$ is $P_2$. When $p_{12} > p_{21}$, i.e., when the probability of transitioning from $s_1$ to $s_2$ is higher than the probability of transitioning from $s_2$ to $s_1$, more actors will shift their belief from $s_1$ to $s_2$ than from $s_2$ to $s_1$ over time.
 
@@ -294,41 +294,56 @@ We present an enhanced model of two interconnected discursive networks, each wit
 \end{proposition}
 
 \begin{proposition}\label{prop:falsehood_generation}
-\textbf{Falsehood Generation.} Let $\lambda_k(t)$ be the rate at which new falsehoods are generated in network $N_k$ at time $t$, influenced by network dynamics and external factors. The number of new falsehoods generated in network $N_k$ at time $t$, denoted by $X_k(t)$, follows a Poisson distribution:
-
-\begin{equation}
-X_k(t) \sim \text{Poisson}(\lambda_k(t))
-\end{equation}
+    \textbf{Falsehood Generation.} Let $\lambda_k(t)$ be the rate at which new falsehoods are generated in network $N_k$ at time $t$, influenced by network dynamics and external factors. The number of new falsehoods generated in network $N_k$ at time $t$, denoted by $X_k(t)$, follows a Poisson distribution:
+    \begin{equation}
+    X_k(t) \sim \text{Poisson}(\lambda_k(t))
+    \end{equation}
 \end{proposition}
+
+\begin{remark}
+    The Poisson distribution is used to model the number of events occurring in a fixed interval of time or space, given a known average rate. In this case, $X_k$ represents the number of new falsehoods generated in network $N_k$. The parameter $\lambda_k^*$ is the average rate of falsehood generation at equilibrium.
+\end{remark}
 
 \begin{proposition}\label{prop:cross_detection}
-\textbf{Cross-Network Detection.} Let $d_{jk}(t)$ be the probability that a falsehood in network $N_k$ is detected by an actor in network $N_j$ at time $t$. The number of falsehoods detected and removed from network $N_k$ by network $N_j$ at time $t$, denoted by $Y_{jk}(t)$, follows a Binomial distribution:
-
-\begin{equation}
-Y_{jk}(t) \sim \text{Binomial}(F_k(t), d_{jk}(t))
-\end{equation}
+    \textbf{Cross-Network Detection.} Let $d_{jk}(t)$ be the probability that a falsehood in network $N_k$ is detected by an actor in network $N_j$ at time $t$. The number of falsehoods detected and removed from network $N_k$ by network $N_j$ at time $t$, denoted by $Y_{jk}(t)$, follows a Binomial distribution:
+    \begin{equation}
+    Y_{jk}(t) \sim \text{Binomial}(F_k(t), d_{jk}(t))
+    \end{equation}
 \end{proposition}
+
+\begin{remark}
+    $Y_{jk}$ represents the number of falsehoods in network $N_k$ detected by network $N_j$. This follows a Binomial distribution because each false statement in $N_k$ has a fixed probability $d_{jk}^*$ of being detected by $N_j$.
+\end{remark}
 
 \begin{proposition}\label{prop:internal_dynamics}
-\textbf{Internal Dynamics.} Let $p_k(t)$ be the probability that a true statement in network $N_k$ becomes false at time $t$, and $q_k(t)$ be the probability that a false statement in network $N_k$ is corrected to become true at time $t$. The number of true statements becoming false, $Z_k(t)$, and false statements becoming true, $W_k(t)$, in network $N_k$ at time $t$ follow Binomial distributions:
-
-\begin{equation}
-Z_k(t) \sim \text{Binomial}(T_k(t), p_k(t))
-\end{equation}
-\begin{equation}
-W_k(t) \sim \text{Binomial}(F_k(t), q_k(t))
-\end{equation}
+    \textbf{Internal Dynamics.} Let $p_k(t)$ be the probability that a true statement in network $N_k$ becomes false at time $t$, and $q_k(t)$ be the probability that a false statement in network $N_k$ is corrected to become true at time $t$. The number of true statements becoming false, $Z_k(t)$, and false statements becoming true, $W_k(t)$, in network $N_k$ at time $t$ follow Binomial distributions:
+    \begin{equation}
+    Z_k(t) \sim \text{Binomial}(T_k(t), p_k(t))
+    \end{equation}
+    \begin{equation}
+    W_k(t) \sim \text{Binomial}(F_k(t), q_k(t))
+    \end{equation}
 \end{proposition}
 
-The evolution of the network states can be described by the following stochastic difference equations:
+\begin{remark}
+    $Z_k$ represents the number of true statements in network $N_k$ that become false. This also follows a Binomial distribution because each true statement has a fixed probability $p_k^*$ of becoming false.
+\end{remark}
 
-\begin{equation}\label{eq:true_statements_evolution}
-T_k(t+1) = T_k(t) - Z_k(t) + W_k(t)
-\end{equation}
+\begin{remark}
+    $W_k$ represents the number of false statements in network $N_k$ that are corrected to become true. This follows a Binomial distribution as well, with $F_k^*$ false statements each having a probability $q_k^*$ of being corrected.
+\end{remark}
 
-\begin{equation}\label{eq:false_statements_evolution}
-F_k(t+1) = F_k(t) + X_k(t) + Z_k(t) - W_k(t) - Y_{jk}(t)
-\end{equation}
+\begin{proposition}\label{prop:cross_model_formulation}
+    \textbf{ Cross-Network Invalidation Detection model}: The evolution of the network states in a can be described by the following stochastic difference equations:
+    %
+    \begin{equation}\label{eq:true_statements_evolution}
+    T_k(t+1) = T_k(t) - Z_k(t) + W_k(t)
+    \end{equation}
+    %
+    \begin{equation}\label{eq:false_statements_evolution}
+    F_k(t+1) = F_k(t) + X_k(t) + Z_k(t) - W_k(t) - Y_{jk}(t)
+    \end{equation}
+\end{proposition}
 
 \begin{theorem}\label{thm:expected_equilibrium}
 \textbf{Expected Equilibrium State.} The expected equilibrium state of network $N_k$ is given by:
@@ -368,18 +383,6 @@ where $n_k = E[T_k^*] + E[F_k^*]$ is the expected total number of statements in 
     E[Z_k] &= T_k^* \cdot p_k^* \quad \text{(Binomial distribution mean)} \\
     E[W_k] &= F_k^* \cdot q_k^* \quad \text{(Binomial distribution mean)}
     \end{align}
-    
-    1. $E[X_k] = \lambda_k^*$ (Poisson distribution mean):
-       - The Poisson distribution is used to model the number of events occurring in a fixed interval of time or space, given a known average rate. In this case, $X_k$ represents the number of new falsehoods generated in network $N_k$. The parameter $\lambda_k^*$ is the average rate of falsehood generation at equilibrium.
-    
-    2. $E[Y_{jk}] = F_k^* \cdot d_{jk}^*$ (Binomial distribution mean):
-       - $Y_{jk}$ represents the number of falsehoods in network $N_k$ detected by network $N_j$. This follows a Binomial distribution because each false statement in $N_k$ has a fixed probability $d_{jk}^*$ of being detected by $N_j$.
-    
-    3. $E[Z_k] = T_k^* \cdot p_k^*$ (Binomial distribution mean):
-       - $Z_k$ represents the number of true statements in network $N_k$ that become false. This also follows a Binomial distribution because each true statement has a fixed probability $p_k^*$ of becoming false.
-    
-    4. $E[W_k] = F_k^* \cdot q_k^*$ (Binomial distribution mean):
-       - $W_k$ represents the number of false statements in network $N_k$ that are corrected to become true. This follows a Binomial distribution as well, with $F_k^*$ false statements each having a probability $q_k^*$ of being corrected.
     
     \textbf{Step 3: Substitute Expected Values}
     
@@ -663,7 +666,10 @@ The parallel between invalidation in LLMs and human discourse opens up new avenu
 
 The models presented for invalidaiton propagation provide a comprehensive framework for analyzing the dynamics of falsehood generation, propagation, and detection in isolated and interconnected discursive networks. It allows for the exploration of various scenarios by adjusting parameters such as falsehood generation rates, detection probabilities, and internal correction processes. Future work could focus on extending this model to include more complex network structures, heterogeneous actor behaviors, or the impact of targeted misinformation campaigns. Additionally, empirical studies could help validate the model's assumptions and refine its parameters for specific real-world contexts.
 
-\bibliographystyle{plainnat}  
+\section*{Ackowledgements}
+The manuscript was composed primarily using the methods outlined in \citet{flaws2024}. The authors determined the structure and content of the manuscript, while the writing tasks were largely delegated to machine learning models through multiple iterations of directed generation. Consensus on the final text was achieved by leveraging a competitive process between Anthropic's Claude 3.5 and GPT-4, conducted during the summer of 2024.  See ChatGPT exchanges \href{https://chatgpt.com/share/f69bc903-8b53-47b3-bca9-82801c87c4db}{f69bc903-8b53-47b3-bca9-82801c87c4db},  \href{https://chatgpt.com/share/21807421-bf7b-43e0-8593-7733c75e0e7f}{21807421-bf7b-43e0-8593-7733c75e0e7f}, \href{https://chatgpt.com/share/1ff4bff4-f366-49bb-be7b-f28fbfc0a2c2}{1ff4bff4-f366-49bb-be7b-f28fbfc0a2c2}. At the time of writing this manuscript, Anthropic's Claude did not possess the functionality to share chats. However, Claude's output can be partially observed within GPT-4 interactions.  
+
+\bibliographystyle{plainnat}   
 \bibliography{references}
 
 \end{document}
