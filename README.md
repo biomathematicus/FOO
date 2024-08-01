@@ -1,5 +1,5 @@
 # FOO
-Manuscript: The Flaws of Others. This manuscript explains how to use LLMs for scientific work. The article "Evolving Scientific Publishing: Balancing Tradition and Innovation in a Global Context" explores the current status of publishing and how the use of LLMs in scientific work will change the publishing landscape. 
+The manuscript "The Flaws of Others" explains how to use LLMs for scientific work. The article "Evolving Scientific Publishing: Balancing Tradition and Innovation in a Global Context" explores the current status of publishing and how the use of LLMs in scientific work will change the publishing landscape. 
 
 **Git protocol:**
 ```bash
