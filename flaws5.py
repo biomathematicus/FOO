@@ -1,66 +1,122 @@
+# -*- coding: utf-8 -*-
+"""single_network_simulation.py  (Flaws 5, proportion space, CHANGE 1)
+
+Single‑network invalidation dynamics with Monte‑Carlo averaging.
+Counts are normalised to proportions so plots lie in the common
+range [0,1].  Font size is now controlled by the configurable global
+`FONT_SIZE`.
+"""
+from __future__ import annotations
+
 import numpy as np
 import matplotlib.pyplot as plt
-import random
 
-# Step 1: Initialize Actors and Statements
-num_actors = 1000
-statements = ["s1", "s2"]
-p12 = 0.06  # Probability that a holder of s1 changes to s2
-p21 = 0.045  # Probability that a holder of s2 changes to s1
+# --------------------------------------------------------------
+# Configurable appearance
+# --------------------------------------------------------------
+FONT_SIZE = 16  # ← adjust once; affects all default text sizes
+plt.rcParams.update({
+    "font.size": FONT_SIZE,
+    "axes.titlesize": FONT_SIZE + 1,
+    "axes.labelsize": FONT_SIZE,
+    "legend.fontsize": FONT_SIZE - 1,
+    "xtick.labelsize": FONT_SIZE - 1,
+    "ytick.labelsize": FONT_SIZE - 1,
+})
 
-# Step 2: Define the update function for beliefs
-def update_beliefs(beliefs, p12, p21):
-    new_beliefs = beliefs.copy()
-    for actor in beliefs:
-        if beliefs[actor] == "s1" and random.random() < p12:
-            new_beliefs[actor] = "s2"
-        elif beliefs[actor] == "s2" and random.random() < p21:
-            new_beliefs[actor] = "s1"
-    return new_beliefs
+# --------------------------------------------------------------
+# Model parameters
+# --------------------------------------------------------------
 
-# Step 3: Simulate the Network Dynamics
-num_iterations = 100
-epochs = 20
+num_actors      = 20
+p12             = 0.08   # s1 → s2
+p21             = 0.045  # s2 → s1
 
-all_beliefs_over_time = []
+num_iterations  = 100
+epochs          = 20
+rng             = np.random.default_rng(seed=1973)
 
-for epoch in range(epochs):
-    beliefs = {i: random.choice(statements) for i in range(num_actors)}
-    beliefs_over_time = []
-    
+time = np.arange(num_iterations)
+
+# --------------------------------------------------------------
+# One Monte‑Carlo epoch → trajectories of PROPORTIONS
+# --------------------------------------------------------------
+
+def simulate_epoch() -> tuple[np.ndarray, np.ndarray]:
+    """Return two length‑`num_iterations` arrays of proportions."""
+    beliefs = rng.choice(["s1", "s2"], size=num_actors)
+    traj_s1, traj_s2 = [], []
+
     for _ in range(num_iterations):
-        beliefs = update_beliefs(beliefs, p12, p21)
-        
-        # Record the number of actors holding each belief
-        count_s1 = sum(1 for belief in beliefs.values() if belief == statements[0])
-        count_s2 = sum(1 for belief in beliefs.values() if belief == statements[1])
-        beliefs_over_time.append((count_s1, count_s2))
-    
-    all_beliefs_over_time.append(beliefs_over_time)
+        mask_s1 = beliefs == "s1"
+        mask_s2 = ~mask_s1
+        flips_s1 = rng.random(num_actors) < p12  # s1 → s2
+        flips_s2 = rng.random(num_actors) < p21  # s2 → s1
+        beliefs[mask_s1 & flips_s1] = "s2"
+        beliefs[mask_s2 & flips_s2] = "s1"
 
-# Convert to numpy array for easier manipulation
-all_beliefs_over_time = np.array(all_beliefs_over_time)
+        traj_s1.append(np.count_nonzero(beliefs == "s1") / num_actors)
+        traj_s2.append(np.count_nonzero(beliefs == "s2") / num_actors)
 
-# Calculate mean and confidence intervals
-mean_beliefs_over_time = np.mean(all_beliefs_over_time, axis=0)
-std_beliefs_over_time = np.std(all_beliefs_over_time, axis=0)
+    return np.asarray(traj_s1), np.asarray(traj_s2)
 
-ci_s1_upper = mean_beliefs_over_time[:, 0] + 1.96 * std_beliefs_over_time[:, 0] / np.sqrt(epochs)
-ci_s1_lower = mean_beliefs_over_time[:, 0] - 1.96 * std_beliefs_over_time[:, 0] / np.sqrt(epochs)
-ci_s2_upper = mean_beliefs_over_time[:, 1] + 1.96 * std_beliefs_over_time[:, 1] / np.sqrt(epochs)
-ci_s2_lower = mean_beliefs_over_time[:, 1] - 1.96 * std_beliefs_over_time[:, 1] / np.sqrt(epochs)
+# --------------------------------------------------------------
+# Monte‑Carlo ensemble
+# --------------------------------------------------------------
 
-# Step 4: Plot the time series of beliefs
-plt.figure(figsize=(10, 6))
-plt.plot(mean_beliefs_over_time[:, 0], label='Mean trajectory of s1')
-plt.plot(mean_beliefs_over_time[:, 1], label='Mean trajectory of s2')
-plt.fill_between(range(num_iterations), ci_s1_lower, ci_s1_upper, color='blue', alpha=0.1)
-plt.fill_between(range(num_iterations), ci_s2_lower, ci_s2_upper, color='red', alpha=0.1)
-plt.axhline(y=num_actors * p21 / (p12 + p21), color='b', linestyle='--', label=f"Theoretical P1: {num_actors * p21 / (p12 + p21):.0f}")
-plt.axhline(y=num_actors * p12 / (p12 + p21), color='r', linestyle='--', label=f"Theoretical P2: {num_actors * p12 / (p12 + p21):.0f}")
-plt.xlabel('Iteration')
-plt.ylabel('Number of Actors')
-plt.title(f'Evolution of Beliefs Over Time (Average of {epochs} Epochs)')
-plt.legend()
-plt.savefig('FOO_Figure1.png', dpi=300)
+all_s1, all_s2 = [], []
+for _ in range(epochs):
+    s1, s2 = simulate_epoch()
+    all_s1.append(s1)
+    all_s2.append(s2)
+
+all_s1 = np.vstack(all_s1)
+all_s2 = np.vstack(all_s2)
+
+# --------------------------------------------------------------
+# Mean and 95 % confidence interval
+# --------------------------------------------------------------
+
+def mean_ci(arr: np.ndarray):
+    mean = arr.mean(axis=0)
+    std = arr.std(axis=0, ddof=1)
+    half = 1.96 * std / np.sqrt(epochs)
+    return mean, half
+
+mean_s1, ci_s1 = mean_ci(all_s1)
+mean_s2, ci_s2 = mean_ci(all_s2)
+
+# --------------------------------------------------------------
+# Theoretical asymptotes in proportion space
+# --------------------------------------------------------------
+
+P1_star = p21 / (p12 + p21)
+P2_star = p12 / (p12 + p21)
+
+# --------------------------------------------------------------
+# Plot
+# --------------------------------------------------------------
+
+fig, ax = plt.subplots(figsize=(10.8, 7.68), dpi=100)
+
+ax.plot(time, mean_s1, color="blue", label="Mean $s_1$")
+ax.fill_between(time, mean_s1 - ci_s1, mean_s1 + ci_s1,
+                color="blue", alpha=0.15)
+ax.plot(time, mean_s2, color="red", label="Mean $s_2$")
+ax.fill_between(time, mean_s2 - ci_s2, mean_s2 + ci_s2,
+                color="red", alpha=0.15)
+
+ax.axhline(P1_star, color="blue", linestyle="--", label="$P_1^{*}$")
+ax.axhline(P2_star, color="red", linestyle="--", label="$P_2^{*}$")
+
+ax.set_xlabel("Time step")
+ax.set_ylabel("Proportion of actors")
+ax.set_ylim(0, 1)
+ax.set_title(
+    "Single‑Network Invalidation Dynamics (proportions)\n"
+    f"Monte‑Carlo runs = {epochs}")
+ax.legend(frameon=False, ncol=2, loc="lower center")
+
+fig.tight_layout()
+fig.savefig("FOO_Single-Network.png", dpi=300, bbox_inches="tight")
 plt.show()

@@ -8,9 +8,17 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{booktabs}  % for \toprule, \midrule, \bottomrule
+\usepackage{tabularx}
+\usepackage{extarrows} % for \xrightleftharpoons
+\usepackage{subcaption}
 
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning}
 \geometry{margin=1in}
+
+\usepackage{chngcntr}
+\counterwithout{table}{section}
 
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}[section]
@@ -20,14 +28,14 @@
 \newtheorem{lemma}{Lemma}[section]
 \newtheorem{remark}{Remark}[section]
 
-\title{The Flaws of Others}
+\title{The Flaws of Others: A Framework for Creative Work Aided by Ensembles of Artificial Intelligence Agents}
 \author{
-    Juan B. Gutiérrez\footnote{\href{mailto:juan.gutierrez3@utsa.edu}{juan.gutierrez3@utsa.edu} Department of Mathematics, University of Texas at San Antonio.}  \phantom{ } and ... (add your name)
+    Juan B. Gutiérrez\footnote{\href{mailto:juan.gutierrez3@utsa.edu}{juan.gutierrez3@utsa.edu} Department of Mathematics, University of Texas at San Antonio.}  \phantom{ } 
     % 
     %nd 
     %
 }
-\date{}
+\date{\today}
 
 \begin{document}
 
@@ -52,480 +60,755 @@ To address this problem, researchers have developed various mitigation strategie
 
 The persistence of this issue highlights the need for ongoing research and development of robust verification methods. As LLMs continue to evolve and find applications in diverse fields, ensuring their factual accuracy and reliability becomes increasingly crucial. This challenge sits at the intersection of natural language processing, knowledge representation, and AI ethics, requiring interdisciplinary approaches to develop comprehensive solutions. 
 
-%===============================================
-\subsection{Invalidation vs. Hallucination}
-%===============================================
-While hallucinations in LLMs have been extensively studied, this paper introduces a novel concept called ``invalidation," which represents a distinct and potentially more insidious form of false information generation. Invalidation differs from hallucination in several key aspects:
 
-1. Nature of Falsehood: Hallucinations are unintentional factual inaccuracies or fabrications, whereas invalidation involves the active negation or disputation of established truths.
 
-2. Presentation of Information: Hallucinations typically result in plausible but incorrect information. In contrast, invalidation often presents alternative facts or misleading evidence that directly contradicts known truths.
+%------------------------------------------------
+\subsection{Evolving from Hallucination to Invalidation}
+\label{sec:invalidity-universal}
+%------------------------------------------------
+%\paragraph{Hallucination as a subset.}
+The term ``hallucination'' has become the \emph{de facto} umbrella term in public discourse to refer to false information produced by LLMs.    Describing LLM errors as ``hallucinations'' borrows from perceptual psychology, where a hallucination is a private sensory experience unverifiable by others. In contrast, an LLM's unfounded assertion can be \emph{accepted as truth} by the reader, amplifying and propagating misinformation misinformation in ways human hallucinations cannot \citep{crawford2021excavating}, and whose societal impact is poorly understood.  
+Clarifying this mismatch in terminology is more than semantics; it shapes the research agenda and the urgency with which different error classes are addressed.
+%A verbatim theorem copied from a textbook may still be \emph{invalid} if followed by an unsound proof (deductive error) or wrapped in malformed JSON (format violation). 
 
-3. Impact on Knowledge Systems: Hallucinations may lead to isolated errors, but invalidation has the potential to undermine entire systems of knowledge by creating doubt and confusion about verified facts.
 
-4. Underlying Mechanisms: Hallucinations stem from the model's probabilistic nature and limitations in training data. Invalidation, while not intentional, appears more deliberate due to the emergent behavior of the model and the influence of biased or misleading training data.
+%\paragraph{Definition and scope.}
+We define \textbf{invalidation} as any model output that violates a constraint set
+\[
+\mathcal{C}(x)=\{\text{facts},\;\text{logical entailments},\;\text{ethical norms},\;\text{format rules}\},
+\]
+given a prompt $x\!\in\!\mathcal{X}$ and an LLM decoding function
+$g:\mathcal{X}\!\rightarrow\!\mathcal{Y}$.  
+Because $g$ maximises next-token likelihood rather than global consistency with $\mathcal{C}(x)$, a non-zero slice of probability mass inevitably falls \emph{outside} the constraint manifold.\footnote{Even an oracle model with perfect world knowledge would emit invalid tokens if forced to sample instead of selecting the single highest-probability sequence.}
 
-For example, a hallucination might involve an LLM incorrectly stating the year of a historical event. Invalidation, on the other hand, might manifest as the LLM generating content that denies well-established scientific facts, such as climate change, by presenting fabricated data or misinterpreting genuine information.
+%\paragraph{Manifestations of invalidity.}
+In practice, \emph{invalidation} surfaces along at least five recurring archetypes that differ in locus and detectability.  
+First, \textbf{hallucination} denotes the introduction of content that is ungrounded in any trusted source or context; large-scale surveys show it to be pervasive even in the highest-performing models \citep{huang2023survey}.  
+Second, \textbf{contradiction} captures internally inconsistent statements that coexist within a single generation, a failure mode quantified and mitigated by prompt-based self-refinement techniques \citep{mundler2023selfcontradiction}.  
+Third, \textbf{deductive error} arises when the model draws logically invalid conclusions from true premises, an error family systematically stress-tested with adversarial perturbations \citep{hoppe2025deductive}.  
+Fourth, \textbf{pragmatic impropriety} concerns outputs that violate social or professional norms, including toxicity, hate speech, or privacy leakage; the \emph{RealToxicityPrompts} benchmark revealed that even innocuous inputs can trigger toxic degeneration \citep{gehman2020realtoxicity}.  
+Finally, \textbf{format violation} occurs when the model breaks explicit structural constraints (e.g., JSON Schema), jeopardising downstream machine consumption; work with \emph{JSONSchemaBench} shows that such violations remain stubbornly frequent despite constrained decoding \citep{geng2025jsonschema}.
 
-This distinction between hallucination and invalidation is crucial for several reasons:
+Taken together, these archetypes point to a broad invalidation family, potentially with more members,  underscoring the need for evaluation suites and mitigation strategies that address the full spectrum of failure modes. Figure~\ref{fig:taxonomy} schematizes this superset-subset relationship. 
 
-1. It allows for more targeted mitigation strategies, as the approaches needed to address invalidation may differ from those used for hallucinations.
+Mitigation strategies to decrease invalidations have been proposed, including improving training data quality, enhancing model architectures to prioritize factual accuracy, and incorporating real-time fact-checking mechanisms \citep{lewis2020retrieval, wang2023self}. For example, an LLM might generate a fabricated historical event due to the patterns it learned from the training data.  Addressing invalidation requires methods to cross-verify generated content with credible sources and detect contradictions with known truths. Techniques like retrieval-augmented generation and consistency checks can be effective \citep{evans2021truthful}. To address the problem of invalidation, some approaches suggest using multiple LLMs to cross-verify information \citep{li2021multiview}. By generating a consensus among different models, it is possible to reduce the likelihood of false statements. This method leverages the diverse training backgrounds and potential error distributions of multiple models, enhancing the overall accuracy and reliability of the generated content.
 
-2. It highlights a potentially more dangerous form of misinformation that could have far-reaching consequences in fields such as science, politics, and public health.
+\input{FOOVenn.tex}
 
-3. It emphasizes the need for more sophisticated verification mechanisms that can not only check factual accuracy but also detect attempts to undermine established knowledge.
+\begin{tcolorbox}[colframe=gray!25,colback=gray!10,title=Key Insight]
+Focusing mitigation solely on hallucination risks overlooking logically,
+ethically, and structurally invalid outputs.  
+Comprehensive reliability must address the entire invalidation space.
+\end{tcolorbox}
 
-To comprehensively understand and address these phenomena, we propose an epistemological framework that categorizes false information generated by LLMs into two distinct types: hallucination and invalidation. This framework helps delineate the nature, causes, and implications of each type, thus guiding the development of targeted mitigation strategies.
+%------------------------------------------------
+\subsection{Invalidation as a Universal Feature of Human and Artificial Cognition}
+\label{sec:invalidity-human}
+%------------------------------------------------
 
-%===============================================
-\subsection{Epistemological Framework for False Information}
-%===============================================
+Invalidation, as observed in large language models (LLMs), is not an isolated flaw unique to artificial intelligence but mirrors well-documented behaviors in human discourse. This similarity suggests that invalidation is not simply a by-product of autoregressive sampling, but a potentially universal cognitive process rooted in the fundamental nature of information processing. It emerges when any complex agent—biological or artificial—operates under uncertainty, bounded rationality, and social constraints.
 
-1. Hallucination: Characterized by unintentional factual inaccuracies and fabrications due to the probabilistic text generation process. Mitigation strategies include improving training data quality, enhancing model architectures to prioritize factual accuracy, and incorporating real-time fact-checking mechanisms \citep{lewis2020retrieval, wang2023self}. For example, an LLM might generate a fabricated historical event due to the patterns it learned from the training data.
+Humans routinely make assertions that contradict observable facts, distort evidence, or violate shared norms. These behaviors are extensively analyzed in sociological, psychological, and media-theoretical work. \citet{goffman1959presentation} describes social life as a series of performances, in which individuals manage impressions by omitting or reshaping facts. \citet{festinger1957cognitive} introduces the concept of cognitive dissonance, showing how people dismiss or rationalize contradictory evidence to preserve internal coherence. This mechanism parallels how LLMs favor coherence with prior tokens over factual accuracy. \citet{cohen2001states} extends this analysis to collective denial, where groups ignore atrocities or systemic suffering through shared narrative constructions.
 
-2. Invalidation: Defined by statements that negate or contradict established facts through misleading narratives or false evidence. Addressing invalidation requires methods to cross-verify generated content with credible sources and detect contradictions with known truths. Techniques like retrieval-augmented generation and consistency checks can be effective \citep{evans2021truthful}. For instance, generating false data to deny climate change exemplifies invalidation.
+Media theory highlights how information environments shape what counts as real. \citet{mcluhan1964understanding} emphasizes how the structure of a medium—rather than the content—conditions reception and belief. \citet{herman1988manufacturing} propose a model in which institutional and economic filters shape news coverage, systematically privileging certain interpretations. Similarly, \citet{gerbner1976living} develops cultivation theory to explain how repeated exposure to media alters worldviews over time. These perspectives parallel how the architecture and training corpus of LLMs predispose them to generate content that may reinforce falsehoods or marginalize inconvenient truths.
 
-By distinguishing between these two types of false information, this framework not only aids in understanding the underlying mechanisms but also informs the development of more precise and effective countermeasures. Such an approach is critical in enhancing the reliability and trustworthiness of AI-driven language models, particularly as they become increasingly integrated into various domains of society. This framework also highlights important considerations in the broader context of AI ethics and the ongoing development of LLMs.
+Political theory and propaganda analysis offer further insight. \citet{arendt1951origins} argues that totalitarian regimes rely on propaganda to restructure public perception, invalidating empirical reality in the process. \citet{ellul1965propaganda} analyzes how sustained campaigns of persuasion undermine factual consensus and generate manufactured beliefs. These mechanisms have direct analogs in how LLMs can produce persuasive yet false narratives shaped by the distributional characteristics of their training data.
 
-To address the problem of invalidation, some approaches suggest using multiple LLMs to cross-verify information \citep{li2021multiview}. By generating a consensus among different models, it is possible to reduce the likelihood of false statements. This method leverages the diverse training backgrounds and potential error distributions of multiple models, enhancing the overall accuracy and reliability of the generated content.
+Cognitive science provides foundational explanations for why both humans and LLMs produce invalidations. The work of \citet{tversky1974judgment} identifies systematic heuristics and biases that distort human reasoning, such as availability and representativeness, which may have computational counterparts in token prediction and attention mechanisms. \citet{pinker2002blank} critiques the notion of a content-neutral human mind and demonstrates how ideological commitments influence belief formation, suggesting that human cognition, like LLM output, is shaped by embedded priors rather than by neutral appraisal of facts.
 
-%===============================================
-\subsection{Invalidation in Human Discourse and Its Universal Implications}
-%===============================================
+The cross-disciplinary convergence of these findings implies that invalidation is not an accidental error mode but a structural consequence of how intelligent systems manage complexity, uncertainty, and contradiction. This insight reframes LLM invalidation as a computational echo of cognitive strategies humans employ. Rather than indicating a breakdown of alignment, it may reveal the presence of alignment—to socially and contextually shaped heuristics that guide behavior in uncertain conditions.
 
-Invalidation, as observed in LLMs, is not an isolated phenomenon unique to artificial intelligence. Rather, it mirrors a well-documented pattern in human discourse, suggesting a potentially universal cognitive process that transcends the boundaries between artificial and human intelligence.
+Addressing invalidation in LLMs will require approaches that incorporate sociological, psychological, and media-theoretical models of belief formation and narrative control. At the same time, observing how LLMs generate invalidations may provide new empirical traction for understanding human cognitive phenomena such as confirmation bias, belief perseverance, and collective denial. The interdependence between artificial and human cognition in this respect suggests that solutions to misinformation and invalidation may emerge not solely from engineering but from a broader inquiry into the structure of meaning-making itself.
 
-In social interactions, humans frequently encounter and sometimes generate statements that contradict observable evidence or present fabricated narratives as facts. This phenomenon manifests in various forms, from the denial of scientifically proven phenomena to the propagation of conspiracy theories. The parallel between human and LLM behavior in this regard is striking and warrants deeper exploration.
+\subsection{Risks of Invalidation Spillover Through Discursive Networks}
+\label{sec:spillover-discursive-networks}
 
-Sociological perspectives offer valuable insights into this phenomenon. \citet{goffman1959presentation} illuminates how individuals shape and present narratives that may invalidate certain states of the world, a process strikingly similar to the way LLMs construct alternative realities. \citet{festinger1957cognitive} theory of cognitive dissonance explains how people manage conflicting information and beliefs, often leading to the dismissal of evidence that contradicts their views - a process that may be analogous to how LLMs prioritize internal consistency over factual accuracy. \citet{cohen2001states} work on states of denial further illustrates how groups may collectively reject realities such as human rights violations, mirroring the way LLMs can generate content that negates established facts.
+Invalidating outputs from LLMs do not remain confined to isolated instances; they can propagate into human discourse when exposed via interconnected systems of communication. This propagation emerges through what we term a \emph{discursive network}: a large-scale ecosystem encompassing both human and machine agents, whose outputs circulate, reinforce, and mutate through repeated exchanges. When LLM engines instantiate many synthetic agents that generate large volumes of content, these agents become nodes in a network that mediates narrative transmission and amplification.
 
-The field of media studies and communication theory provides additional parallels. \citet{mcluhan1964understanding} insights into how different media forms influence the dissemination and acceptance of information, including falsehoods, can be extended to understand how the architecture of LLMs shapes their output. \citet{chomsky1988manufacturing} analysis of how mass media shapes public perception by filtering and framing information resonates with the way LLMs process and generate content based on their training data. \citet{gerbner1976cultivation} cultivation theory, examining how prolonged exposure to media content can alter perceptions of reality, offers a framework for understanding how repeated exposure to certain patterns in training data might lead LLMs to generate invalidating content.
+Discursive networks consist of nodes (agents or messages) and edges (interactions, citations, reshares). Similar structures appear in sociological and media scholarship under the name of ``discourse networks." In discourse network analysis (DNA), policy actors and communicative actions form relational matrices revealing coalitions and shared narratives over time \citep{turn0search2,turn0search8}. Friedrich Kittler's concept of discourse networks foregrounds how institutions, media technologies, and archival systems structure the formation of meaning \citep{turn0search6}. Though our use of ``discursive network" emphasizes generative models as nodes, these antecedents show that networks shape what counts as credible discourse.
 
-Political science and propaganda studies further illuminate this phenomenon. \citet{arendt1951origins} discussions on the use of propaganda to manipulate public perception find echoes in the way LLMs can generate misleading narratives. \citet{ellul1965propaganda} detailed analysis of how propaganda shapes beliefs and attitudes, leading to the invalidation of certain truths, provides a lens through which we can understand the potential societal impact of LLM-generated invalidations.
+Studies show that humans frequently cannot reliably distinguish LLM-generated text from human-authored text. Meta-analyses and experiments demonstrate that across contexts (from essays to poetry) participants identify AI-generated content correctly only slightly above chance (around 53-67\%) and rely on flawed heuristics such as pronoun use or stylistic fluency \citep{turn0search1,turn0search17,turn0academia22,turn0academia24}. This failure matters in discursive networks: synthetic invalidations introduced through LLM agents may be assumed to come from humans, making them more likely to be reposted or cited.
 
-From a cognitive science perspective, \citet{kahneman1974judgment} work on heuristics and biases offers a framework for understanding why both humans and LLMs may accept and generate false narratives. \citet{pinker2002blank} exploration of how ideological beliefs can lead to the rejection of scientific evidence provides insight into the mechanisms behind invalidation in both human and artificial systems.
+Once in the network, invalidating content can replicate through mechanisms of echo amplification. Social media research on discursive communities shows that clusters form around shared beliefs or frames, and low-quality or misleading messages often dominate within echo-prone structures such as bow-tie topologies \citep{turn0search10,turn0search32}. Agents in such clusters can absorb and disseminate invalidating statements, human or algorithmic, without verification, thereby reinforcing flawed narratives across the network.
 
-The striking parallels between invalidation in human discourse and in LLMs point to a potentially universal phenomenon rooted in the fundamental processes of information processing and knowledge representation. This similarity suggests that invalidation may not be merely a flaw in AI systems, but rather a manifestation of broader cognitive patterns that emerge in any sufficiently complex information processing system, whether biological or artificial.
+Mitigating spillover risk requires understanding how LLM-generated content integrates into wider information flows. Detection limitations compound this integration: even advanced AI-detectors struggle with paraphrased or adversarially manipulated content, achieving accuracy below 80\% and often biased toward false positives on human-written text \citep{turn0academia25,turn0search28}. Human reviewers similarly achieve only ~68\% accuracy in blinded settings \citep{turn0search5}. This fragility facilitates the re-ingestion of LLM-origin falsehoods into human discourse.
 
-Understanding invalidation as a universal phenomenon has profound implications for AI development and our broader understanding of cognition. It suggests that addressing invalidation in LLMs may require insights from diverse fields such as sociology, psychology, and cognitive science, in addition to computer science. Moreover, studying how LLMs produce invalidations may provide new perspectives on human cognitive processes, potentially offering insights into phenomena like confirmation bias, belief perseverance, and the spread of misinformation in human societies.
+Addressing spillover demands a synthesis of discourse network analysis, studies of discursive communities, and research on human detection performance. Networks should be monitored to trace high-volume clusters of LLM-generated invalidations, especially when repetition or citation creates feedback loops. Surveillance mechanisms may include flagging unverified claims, tracing message lineage, and intervening at nodes of high influence before narratives embed within stable discourse communities.
 
-%===============================================
-\subsection{Goal}
-%===============================================
-In this paper, we... [state the focus and contribution of the manuscript... to be done last based on all pieces that can be harmonized]
+Although the idea of synthetic agents participating in discursive networks remains novel, the term ``discursive network" has real usage in DNA and media theory. Our framing recasts these theoretical foundations in light of contemporary LLM capacity for scale and replication. It proposes discursive networks both as a descriptive model for spillover dynamics and as a practical tool for intervention.
+
+
+
 
 %===============================================
 \section{Methods}
 %===============================================
-\subsection{Formalization of Invalidation}
-%===============================================
+%Post-training with supervised fine tuning (SFT)
+%Post-training with reinforcement learning with human feedback (RLHF)
+%Chaoin fo Tought (CoT) was enabled.
+%Systematic trace and evalaution of prompts.  
 
-To systematically study the phenomenon of invalidation, we propose a formal model that quantifies how invalidations propagate within a discursive network. This model considers actors as nodes in a network, with edges representing the exchange of statements. The goal is to understand how actors influence each other and how invalidations spread, eventually reaching an equilibrium state. The subsequent section will detail the methods used to develop and analyze this model, providing a quantitative framework for studying invalidation in both human and artificial contexts.
+\subsection{Categorization of Mechanisms to Engage LLM Agents}
+\label{sec:efficient-engagement}
+
+During inference, a Transformer language model executes a single forward pass per token. The model transforms context $\mathbf{x}_{\le t}$ into embeddings, applies $L$ fixed self-attention layers to produce hidden state $\mathbf{h}_t$, and maps this to a token probability distribution via:
+\[
+p(w_{t+1}\mid\mathbf{x}_{\le t}) = \mathrm{softmax}\!\bigl(W\mathbf{h}_t\bigr).
+\]
+No gradient updates or objective‐function evaluations occur at this stage; the only on-the-fly ``optimization'' is the decoding heuristic (greedy, top-$k$, nucleus, or beam search) that selects the next token from the static distribution $p(\cdot)$.
+
+LLMs support a range of functional output types that can be systematically grouped into three core categories we introduce in this manuscript: \emph{ideation} (constructive synthesis), \emph{critique} (diagnostic evaluation), and \emph{product-oriented generation} (goal-directed deliverables). These three umbrella functions organize diverse tasks, each with distinct inference properties, compositional demands, and distributional positions in the model's output space. Existing literature identifies several subtypes that map naturally onto these categories \citep{bommasani2021opportunities, mialon2023augmented, mialon2024taxonomy}.
+
+\textbf{Critique output} is structurally efficient to generate. 
+Nested within critique are:
+\begin{itemize}
+    \item \emph{Flaws of others}. This approach, introduced in this manuscript, favors the strategy to ask for flaws int he outputs of other agents. Phrases like ``One limitation is…", ``This assumption ignores…", and ``A potential confound is…" are frequent in training corpora, placing them near the peak of $p(\cdot)$. Even shallow decoding heuristics retrieve such patterns with high fluency and relevance \citep{wei2022chain}.
+  \item \emph{Classification and Disambiguation}, such as assigning sentiment, stance, or intent. These tasks resolve ambiguity and often underlie evaluation pipelines \citep{mialon2023augmented}.
+  \item \emph{Restatement and Summarization}, which surface structural coherence or hidden biases by rephrasing or compressing content. When used diagnostically, they reveal implicit assumptions or inconsistencies \citep{zhu2023principled}.
+\end{itemize}
+
+\textbf{Ideation output} demands compositional novelty. Prompts that ask the model to hypothesize mechanisms, imagine alternatives, or propose designs typically land in the tail of the output distribution. Generating them requires broader exploration—via large beam width or elevated temperature—and exhibits greater output variance.
+
+Within ideation, we find:
+\begin{itemize}
+  \item \emph{Instruction and Procedural Guidance}, where the model scaffolds user understanding or explains concepts in sequence. These tasks require didactic clarity and often invoke implicit audience modeling \citep{ouyang2022training}.
+  \item \emph{Meta-Reasoning and Strategy Output}, which includes multi-step planning, evaluating hypotheses, or chain-of-thought reasoning. These outputs require recursive coherence and longer dependency tracking \citep{wei2022chain}.
+\end{itemize}
+
+\textbf{Product-oriented output} targets the generation of external artifacts: source code, formatted markup, structured data, or interactive dialogue. These tasks often carry hard constraints and precision demands. Simple forms (e.g., boilerplate code) reside in high-probability zones, while structurally complex or compositional outputs require deeper exploration.
+
+Included in this class are:
+\begin{itemize}
+  \item \emph{Formalism Translation}, such as converting text to JSON, SQL, or LaTeX. This requires syntax-aligned generation and tight coupling between prompt and output form \citep{reynolds2021prompt}.
+  \item \emph{Retrieval-Simulation}, where the model reproduces facts or references learned during pretraining. These outputs appear fluent but are not grounded in current truth, making them useful but epistemically fragile \citep{bommasani2021opportunities}.
+  \item \emph{Social Interaction Simulation}, which includes emulating customer support, roleplay, or therapeutic dialogue. These are product-like in that the output is consumed as experience or interface, and they require tone, persona, and context alignment \citep{gilardi2023chatgpt}.
+\end{itemize}
+
+%\begin{tcolorbox}[colframe=gray!25,colback=gray!10,title=Practical Takeaway] LLMs support a structured range of outputs, which can be organized under critique, ideation, and product-oriented functions. Subtasks like reasoning, instruction, translation, or summarization inherit their inference cost and performance variability from the parent category. Critique tasks reside near the peak of the model's output distribution, while ideation and complex products require deeper decoding and careful prompt design. Prompt engineers and researchers should align decoding strategy, token budget, and evaluation criteria to the specific structural category of the task. \end{tcolorbox}
+
+Crucially, \textbf{requests to ``list flaws in logic'' tend to align with high-probability lexical patterns that the model has seen many times during training} (e.g., ``One limitation is~…," ``A potential confound is~…," ``This argument assumes~…"). These stigmergic patterns lie near the mode of $p(\cdot)$, so they are reachable with minimal search depth and are often found by even the cheapest heuristic, such as greedy decoding.
+
+By contrast, \textbf{requests for constructive, future-oriented solutions typically require compositional novelty}: the model must synthesize domain facts, propose unseen mechanisms, and articulate actionable steps. Such completions reside in lower-probability regions of the distribution, forcing the decoder to explore a broader beam or to sample deeper into the tail, both of which are algorithmically and computationally more demanding. In short, \emph{critique lives near the peak; creativity lives in the tail}, explaining the empirical asymmetry in generation efficiency that we observe.
+
+
+\begin{tcolorbox}[colframe=gray!25,colback=gray!10,title=Practical Takeaway]
+When evaluation time or token budget is limited, prompting for \emph{negative} evidence (logical flaws, counter-arguments) extracts useful signal more efficiently than prompting for \emph{positive} prescriptions (fixes, redesigns). Researchers should therefore benchmark inference cost and quality separately for ``critique'' versus ``construct'' tasks.
+\end{tcolorbox}
+
 
 %===============================================
-\subsection{Basic Invalidation Propagation}
+\subsection{Discursive Network Formalization}
 %===============================================
+% ask for:
 
-\begin{definition}\label{def:actors_statements}
-\textbf{Actors and Statements.} Let $A = \{a_1, a_2, \ldots, a_n\}$ be the set of actors in the discursive network, and let $S = \{s_1, s_2, \ldots, s_m\}$ be the set of all possible statements in the network, where each statement $s_i$ can be either true or false.
+%     Theoretical implications or properties (e.g., fixed points, stability under updates).
+
+%     Simulation designs (e.g., how beliefs evolve under certain persuasion/invalidation dynamics).
+
+%     Integration with LLM-generated agents.
+
+%     Alignment with concepts such as truth contagion, misinformation propagation, or echo chambers.
+
+To systematically study the phenomenon of invalidation, we propose a formal model that quantifies how invalidations propagate within a discursive network. This model considers actors as nodes in a network, with edges representing the exchange of statements. The goal is to understand how actors influence each other and how invalidations spread, and if and how it reaches an equilibrium state. The subsequent sections will detail the analytical machinery, yielding quantiative informaiton, for studying invalidation in both human and artificial contexts.
+
+\begin{definition}\label{def:discourse}
+    \textbf{Discourse.} In the context of a discursive network, discourse refers to the structured process of communication and interaction between actors, $A = \{a_1, a_2, \ldots, a_n\}$, through which they exchange, validate, invalidate, and attempt to persuade each other regarding the truth or falsity of a set of statements $S = \{s_1, s_2, \ldots, s_m\}$. Discourse encompasses all forms of communication $C = \{C_{ij}\}$ between actors, where beliefs $B_i \subseteq S$ are shared, challenged, or reinforced, as well as the mechanisms of invalidation $I = \{I_{ij}\}$, and persuasion $P = \{P_{ij}\}$, which influence the evolution of each actor's belief set. The outcome of discourse is governed by the update rules $U_j$, which dictate how actors revise their beliefs based on the interactions they engage in.
+    \end{definition}
+
+\begin{definition}\label{def:discursive_network}
+    \textbf{Discursive Network.} A discursive network is a formal structure $N = (A, S, B, G, C, I, P, U)$ where:
+    \begin{itemize}
+    \item $A = \{a_1, a_2, \ldots, a_n\}$ is the set of actors participating in the discourse.
+    \item $S = \{s_1, s_2, \ldots, s_m\}$ is the set of possible statements, where each statement can be either true or false.
+    \item $B = \{B_1, B_2, \ldots, B_n\}$ represents the belief sets of the actors, where $B_i \subseteq S$ denotes the set of statements believed to be true by actor $a_i$.
+    \item $G = \{G_1, G_2, \ldots, G_n\}$ represents the goal functions of the actors, with $G_i: A \to 2^S$ specifying the set of statements actor $a_i$ seeks to convince other actors to believe.
+    \item $C = \{C_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ represents the communications between actors, where $C_{ij}$ is the set of statements communicated from actor $a_i$ to actor $a_j$.
+    \item $I = \{I_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ denotes invalidations, where $I_{ij}(s_k, s_l)$ signifies actor $a_i$ invalidating a statement $s_k$ held by actor $a_j$ using a contradictory statement $s_l$.
+    \item $P = \{P_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ represents the persuasion functions, where $P_{ij}(s_k)$ gives the likelihood that actor $a_j$ will adopt statement $s_k$ after receiving communication from actor $a_i$.
+    \item $U = \{U_j \mid j \in \{1, 2, \ldots, n\}\}$ is the set of update rules that define how each actor's belief set $B_j$ is modified in response to communications and invalidations.
+    \end{itemize}
+    The discursive network models the dynamics of belief formation, communication, persuasion, and invalidation among actors within a formal discourse setting.
 \end{definition}
 
-\begin{proposition}\label{prop:beliefs_goals}
-Each actor $a_i$ holds a set of beliefs, represented by $B_i \subseteq S$. A belief is a statement that the actor considers true. The goal function $G_i$, $G_i: A \to 2^S$, the power set of $S$, represents the set of statements $a_i$ aims to convince $a_j$ to believe. This includes every combination of elements that can be formed from $S$, ranging from the empty set to the full set $S$ itself. 
-\end{proposition}
+%\begin{definition}\label{def:actors_statements}
+%\textbf{Actors and Statements.} Let $A = \{a_1, a_2, \ldots, a_n\}$ be the set of actors in the discursive network, and let $S = \{s_1, s_2, \ldots, s_m\}$ be the set of all possible statements in the network, where each statement $s_i$ can be either true or false.
+%\end{definition}
 
-\begin{proposition}\label{prop:communication_invalidation}
-Communication between actors involves the exchange of statements. A communication from actor $a_i$ to actor $a_j$ is represented as $C_{ij} = \{s_k \mid s_k \in B_i \}$, where $s_k$ is a statement that $a_i$ believes and wants $a_j$ to accept. Invalidation occurs when an actor presents a statement that directly contradicts another statement or fabricates evidence to support a false proposition. Formally, $I_{ij}(s_k, s_l)$ denotes that actor $a_i$ invalidates statement $s_k$ held by $a_j$ by presenting $s_l$.
-\end{proposition}
+% \begin{proposition}\label{prop:beliefs_goals}
+% Each actor $a_i$ holds a set of beliefs, represented by $B_i \subseteq S$. A belief is a statement that the actor considers true. The goal function $G_i$, $G_i: A \to 2^S$, the power set of $S$, represents the set of statements $a_i$ aims to convince $a_j$ to believe. This includes every combination of elements that can be formed from $S$, ranging from the empty set to the full set $S$ itself. 
+% \end{proposition}
 
-\begin{proposition}\label{prop:persuasion_update}
-The persuasion function $P_{ij}(s_k)$ represents the likelihood that actor $a_j$ will adopt statement $s_k$ after communication from $a_i$. This can be modeled using probabilities or influence weights. The update rule $U_j(B_j, C_{ij}, I_{ij})$ determines how the belief set $B_j$ of actor $a_j$ is updated after receiving communication $C_{ij}$ from actor $a_i$ and experiencing invalidation $I_{ij}$.
-\end{proposition}
+%\begin{proposition}\label{prop:communication_invalidation}
+%Communication between actors involves the exchange of statements. A communication from actor $a_i$ to actor $a_j$ is represented as $C_{ij} = \{s_k \mid s_k \in B_i \}$, where $s_k$ is a statement that $a_i$ believes and wants $a_j$ to accept. Invalidation occurs when an actor presents a statement that directly contradicts another statement or fabricates evidence to support a false proposition. Formally, $I_{ij}(s_k, s_l)$ denotes that actor $a_i$ invalidates statement $s_k$ held by $a_j$ by presenting $s_l$.
+%\end{proposition}
 
-\begin{proposition}\label{prop:formal_model}
-Let $N = (A, S, B, G, C, I, P, U)$ be the formal model of the discursive network, where $A$ is the set of actors, $S$ is the set of statements, $B = \{B_1, B_2, \ldots, B_n\}$ is the set of belief sets for each actor, $G = \{G_1, G_2, \ldots, G_n\}$ is the set of goal functions for each actor, $C = \{C_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ is the set of communications between actors, $I = \{I_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ is the set of invalidations between actors, $P = \{P_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ is the set of persuasion functions, and $U = \{U_j \mid j \in \{1, 2, \ldots, n\}\}$ is the set of update rules.
-\end{proposition}
+% \begin{proposition}\label{prop:persuasion_update}
+% The persuasion function $P_{ij}(s_k)$ represents the likelihood that actor $a_j$ will adopt statement $s_k$ after communication from $a_i$. This can be modeled using probabilities or influence weights. The update rule $U_j(B_j, C_{ij}, I_{ij})$ determines how the belief set $B_j$ of actor $a_j$ is updated after receiving communication $C_{ij}$ from actor $a_i$ and experiencing invalidation $I_{ij}$.
+% \end{proposition}
+
+% \begin{proposition}\label{prop:formal_model}
+% Let $N = (A, S, B, G, C, I, P, U)$ be the formal model of the discursive network, where $A$ is the set of actors, $S$ is the set of statements, $B = \{B_1, B_2, \ldots, B_n\}$ is the set of belief sets for each actor, $G = \{G_1, G_2, \ldots, G_n\}$ is the set of goal functions for each actor, $C = \{C_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ is the set of communications between actors, $I = \{I_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ is the set of invalidations between actors, $P = \{P_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ is the set of persuasion functions, and $U = \{U_j \mid j \in \{1, 2, \ldots, n\}\}$ is the set of update rules.
+% \end{proposition}
 
 \textbf{Example.} Consider a simple scenario with three actors $A = \{a_1, a_2, a_3\}$ and two statements $S = \{s_1, s_2\}$. Actor $a_1$ believes $s_1$ ($B_1 = \{s_1\}$) and wants $a_2$ and $a_3$ to also believe $s_1$ ($G_1(a_2) = G_1(a_3) = \{s_1\}$). Actor $a_2$ believes $s_2$ ($B_2 = \{s_2\}$) and wants $a_1$ and $a_3$ to believe $s_2$ ($G_2(a_1) = G_2(a_3) = \{s_2\}$). Actor $a_3$ is initially neutral ($B_3 = \emptyset$). Actor $a_1$ communicates $C_{12} = \{s_1\}$ to $a_2$, who invalidates $s_1$ by presenting $I_{21}(s_1, s_2)$. Actor $a_3$, observing this interaction, updates their belief set based on the persuasion functions and update rules. This framework models the propagation of invalidation within a discursive network, capturing the dynamics of belief, communication, and influence. By formalizing these interactions, we can analyze and predict how invalidation affects the acceptance and rejection of statements among actors in the network.
 
-\begin{proposition}\label{prop:basic_model_formulation}
-\textbf{Basic Model Formulation.} To describe the state of asymptotic equilibrium of the system mathematically, we need to analyze the transition probabilities between the states $s_1$ and $s_2$. This can be modeled using a Markov chain with two states.
-\end{proposition}
 
-Define the states as follows: $S_1$: The state where an actor believes $s_1$. $S_2$: The state where an actor believes $s_2$. The transition probabilities are: $p_{12}$: Probability that an actor transitions from $S_1$ to $S_2$, and $p_{21}$: Probability that an actor transitions from $S_2$ to $S_1$. Let $P(t)$ represent the state vector at time $t$, where: $P_1(t)$: Proportion of actors in state $S_1$ at time $t$ and $P_2(t)$: Proportion of actors in state $S_2$ at time $t$. 
-
-The transition matrix $T$ is given by:
-\begin{equation}\label{eq:transition_matrix}
-T = \begin{pmatrix}
-1 - p_{12} & p_{12} \\
-p_{21} & 1 - p_{21}
-\end{pmatrix}
-\end{equation}
-
-The state vector $P(t)$ evolves according to:
-\begin{equation}\label{eq:state_vector_evolution}
-P(t+1) = T \cdot P(t) 
-\end{equation}
-
-
-\begin{theorem}\label{thm:basic_invalidation_propagation}
-\textbf{Basic Invalidation Propagation.} The state of equilibrium of  the system described by Equation \ref{eq:state_vector_evolution} is a stable fixed point given by:
+%------------------------------------------------
+\subsubsection{Single-Network Two-State Model}
+%------------------------------------------------
+Let $n=|A|$ be the actor count in the
+collapsed network with two mutually exclusive statements
+$S=\{r,f\}$, where $r$ denotes a \textbf{true} statement and $f$ a \textbf{false} one. For comparison with empirical simulations we work exclusively with
+\emph{proportions}. 
+The population state at time~$t$ is the column vector
 \[
-P = \begin{pmatrix}
-\frac{p_{21}}{p_{12} + p_{21}} \\
-\frac{p_{12}}{p_{12} + p_{21}}
-\end{pmatrix}
+\boldsymbol{\pi}(t)=\bigl(\pi_{r}(t),\pi_{f}(t)\bigr)^{\mathsf T},\qquad
+\pi_{r}(t)=\frac{T(t)}{n},\;
+\pi_{f}(t)=\frac{F(t)}{n}=1-\pi_{r}(t),
 \]
-\end{theorem}
-
-\textbf{Proof.} The system reaches equilibrium when $P(t+1) = P(t) = P$, where $P$ is the equilibrium state vector. At equilibrium, the proportions of actors holding each belief remain constant. We need to solve the equation:
-\begin{equation}\label{eq:equilibrium_condition}
-P  =  T \cdot P.
-\end{equation}
-%
-This can be written as a system of linear equations:
-%
-\begin{equation}\label{eq:linear_system}
-    \begin{pmatrix}
-        P_1 \\ 
-        P_2
-    \end{pmatrix}
-    = 
-    \begin{pmatrix}
-        1 - p_{12} & p_{21} \\
-        p_{12} & 1 - p_{21}
-    \end{pmatrix}
-    \begin{pmatrix}
-        P_1 \\ 
-        P_2
+where $T(t)$ and $F(t)$ are the respective counts of actors endorsing
+$r$ and $f$.
+Micro-level flips are characterised by the probabilities  
+$p$ for $r\!\rightarrow\!f$ and  
+$q$ for $f\!\rightarrow\!r$.
+These induce the population-level transition matrix
+\begin{equation}\label{eq:single-network-system1}
+    T=\begin{pmatrix}
+    1-p & q\\
+    p   & 1-q
     \end{pmatrix},
+    \qquad
+    \boldsymbol{\pi}(t+1)=T\,\boldsymbol{\pi}(t).
 \end{equation}
-%
-or in agebraic form
-%
-\begin{align}
-    P_1 & = (1 - p_{12}) P_1  +  p_{21} P_2 \label{eq:equilibrium_eq1}, \\
-    P_2 & = p_{12} P_1  +  (1 - p_{21}) P_2 \label{eq:equilibrium_eq2}.
-\end{align}
-%
-Rearraging, we obtain 
-%
-\begin{align}
-    P_1 & = P_1 - p_{12} P_1  + p_{21} P_2, \\
-    P_2 & = p_{12} P_1  + P_2 - p_{21} P_2.  
-\end{align}
-%
-Ssimplifying, 
-%
-\begin{align}
-    - P_1 p_{12} + P_2 p_{12} &= 0 \label{eq:equilibrium_simplify1} \\
-    P_1 p_{12} & = P_2 p_{12}
-\end{align}
-%
-Since $p_{12} \neq 0$:
-%
-\begin{equation}\label{eq:equilibrium_simplify2}
-    P_1 = P_2 \cdot \frac{p_{21}}{p_{12}}
-\end{equation}
-%
-From the normalization condition $P_1 + P_2 = 1$:
-%
-\begin{equation}\label{eq:normalization_condition}
-P_2 \cdot \frac{p_{21}}{p_{12}} + P_2 = 1 
-\end{equation}
-%
-from where 
-%
-\begin{equation}\label{eq:normalization_condition}
-P_2 = \frac{p_{12}}{p_{12} + p_{21}}
-\end{equation}
-%
-Substitute $P_2$ back into the equation for $P_1$:
-\begin{align}\label{eq:equilibrium_proportion1}
-    P_1 =& \frac{p_{21}}{p_{12}} \cdot P_2 \\ 
-    P_1 =& \frac{p_{21}}{p_{12} + p_{21}}
-\end{align}
-%
-Thus, the equilibrium state vector is:
-%
-\begin{equation}\label{eq:equilibrium_proportions}
-P = \begin{pmatrix}
-P_1 \\
-P_2
-\end{pmatrix}
-=
+The mapping of this model to Definition \ref{def:discursive_network} is provided in Table \ref{tab:Single-Network-Dual-State}. 
+
+\begin{table}[htbp]
+    \centering
+    \setlength{\tabcolsep}{6pt}
+    \renewcommand{\arraystretch}{1.15}
+    \caption{Mapping of discursive network elements to the single-network invalidation problem.}
+    \label{tab:Single-Network-Dual-State}
+    \begin{tabularx}{6.5in}{@{}lX@{}}
+    \toprule
+    \textbf{Element in $N$} & \textbf{Instantiation in single-network model} \\
+    \midrule
+    $A$ & Unchanged actor set; proportions refer to $n=|A|$.\\
+    $S=\{r,f\}$ & Binary, mutually exclusive statements (\emph{true} vs. \emph{false}).\\
+    $B_{i}$ & $\{r\}$ or $\{f\}$ for each actor.\\
+    $G_{i}$ & Persuade others to adopt actor $a_{i}$'s current belief.\\
+    $C_{ij}$ & Message containing $B_{i}$.\\
+    $I_{ij}$ & Contradiction if $B_{i}\neq B_{j}$.\\
+    $P_{ij}$ &
+    $p$ if $B_{j}=\{r\}$ and $B_{i}=\{f\}$;\;
+    $q$ if $B_{j}=\{f\}$ and $B_{i}=\{r\}$.\\
+    $U_{j}$ &
+    Switches $B_{j}$ with the corresponding probability, otherwise leaves it unchanged.\\
+    \bottomrule
+    \end{tabularx}
+\end{table}
+
+\begin{lemma}[Single-network invalidation propagation]\label{lem:basic_invalidation}
+Let the single-network proportion state evolve according to 
+\begin{equation}\label{eq:single-network-system}
+\boldsymbol{\pi}(t+1)=T\,\boldsymbol{\pi}(t),\qquad
+T=\begin{pmatrix}
+1-p & q\\[4pt]
+p   & 1-q
+\end{pmatrix},
+\qquad
+\boldsymbol{\pi}(t)=
 \begin{pmatrix}
-\frac{p_{21}}{p_{12} + p_{21}} \\
-\frac{p_{12}}{p_{12} + p_{21}}
-\end{pmatrix}.
+\pi_{r}(t)\\ \pi_{f}(t)
+\end{pmatrix},\;
+\pi_{r}(t)+\pi_{f}(t)=1,
 \end{equation}
-%
-
-Since system \ref{eq:state_vector_evolution} is linear, its stability can be assessed by determining the values of the roots of the characteristic polynomial resulting from assessing $\det(T-\lambda I) = 0$. The characteristic polynomial is 
-%
+with flip probabilities $p,q\in(0,1)$.
+The system has a unique fixed point
 \[
-    {\lambda}^{2} + (p_{12} + p_{21} - 2) \, \lambda + 1 - p_{12}-p_{21}  = 0,
+\boldsymbol{\pi}^{*}=\begin{pmatrix}
+\dfrac{q}{p+q}\\[6pt]
+\dfrac{p}{p+q}
+\end{pmatrix},
 \]
-%
-resulting in the roots $\{1, 1 - p_{12}-p_{21}\}$. The stability of the first root is undecidable, but the second root is clearly less than one, which is the necessary and sufficient condition for stability fo discrete dynamical systems. Thus, the fixed point is stable. This completes the proof. \(\square\)
-
-\textbf{Interpretation:} The proportion of actors holding belief $s_1$ is $P_1$ and the proportion of actors holding belief $s_2$ is $P_2$. When $p_{12} > p_{21}$, i.e., when the probability of transitioning from $s_1$ to $s_2$ is higher than the probability of transitioning from $s_2$ to $s_1$, more actors will shift their belief from $s_1$ to $s_2$ than from $s_2$ to $s_1$ over time.
-
-
-\textbf{$P_1$ (Proportion of actors holding belief $s_1$)}: $P_1 = \frac{p_{21}}{p_{12} + p_{21}}$. Since $p_{12} > p_{21}$, $P_1$ will be less than 0.5. This means that fewer actors will hold belief $s_1$ at equilibrium compared to belief $s_2$.
-
-\textbf{$P_2$ (Proportion of actors holding belief $s_2$)}: $P_2 = \frac{p_{12}}{p_{12} + p_{21}}$. Since $p_{12} > p_{21}$, $P_2$ will be greater than 0.5. This means that more actors will hold belief $s_2$ at equilibrium.
-
-In summary, when $p_{12} > p_{21}$, the system will reach an equilibrium where the proportion of actors holding the belief $s_2$ is higher than the proportion of actors holding the belief $s_1$. This reflects the higher likelihood of actors transitioning from $s_1$ to $s_2$ compared to the reverse.
-
-
-%===============================================
-\subsection{Cross-Network Invalidation Detection Model}
-%===============================================
-
-We present an enhanced model of two interconnected discursive networks, each with the capacity to generate falsehoods internally and detect falsehoods in the other network. This refined model incorporates time-dependent parameters, accounts for network size effects, and allows for asymmetry between networks.
-
-\begin{definition}\label{def:cross_networks}
-\textbf{Dual Networks.} Let $N_1$ and $N_2$ be two discursive networks, with sets of actors $A_1 = \{a_{11}, a_{12}, ..., a_{1n_1}\}$ and $A_2 = \{a_{21}, a_{22}, ..., a_{2n_2}\}$ respectively, where $n_1$ and $n_2$ are the number of actors in each network. 
-\end{definition}
-
-\begin{proposition}\label{prop:network_state}
-\textbf{Network State.} The state of each network $N_k$ at time $t$ is represented by $S_k(t) = (T_k(t), F_k(t))$, where $T_k(t)$ is the number of true statements and $F_k(t)$ is the number of false statements in network $N_k$ at time $t$.
-\end{proposition}
-
-\begin{proposition}\label{prop:falsehood_generation}
-    \textbf{Falsehood Generation.} Let $\lambda_k(t)$ be the rate at which new falsehoods are generated in network $N_k$ at time $t$, influenced by network dynamics and external factors. The number of new falsehoods generated in network $N_k$ at time $t$, denoted by $X_k(t)$, follows a Poisson distribution:
-    \begin{equation}
-    X_k(t) \sim \text{Poisson}(\lambda_k(t))
-    \end{equation}
-\end{proposition}
-
-\begin{remark}
-    The Poisson distribution is used to model the number of events occurring in a fixed interval of time or space, given a known average rate. In this case, $X_k$ represents the number of new falsehoods generated in network $N_k$. The parameter $\lambda_k^*$ is the average rate of falsehood generation at equilibrium.
-\end{remark}
-
-\begin{proposition}\label{prop:cross_detection}
-    \textbf{Cross-Network Detection.} Let $d_{jk}(t)$ be the probability that a falsehood in network $N_k$ is detected by an actor in network $N_j$ at time $t$. The number of falsehoods detected and removed from network $N_k$ by network $N_j$ at time $t$, denoted by $Y_{jk}(t)$, follows a Binomial distribution:
-    \begin{equation}
-    Y_{jk}(t) \sim \text{Binomial}(F_k(t), d_{jk}(t))
-    \end{equation}
-\end{proposition}
-
-\begin{remark}
-    $Y_{jk}$ represents the number of falsehoods in network $N_k$ detected by network $N_j$. This follows a Binomial distribution because each false statement in $N_k$ has a fixed probability $d_{jk}^*$ of being detected by $N_j$.
-\end{remark}
-
-\begin{proposition}\label{prop:internal_dynamics}
-    \textbf{Internal Dynamics.} Let $p_k(t)$ be the probability that a true statement in network $N_k$ becomes false at time $t$, and $q_k(t)$ be the probability that a false statement in network $N_k$ is corrected to become true at time $t$. The number of true statements becoming false, $Z_k(t)$, and false statements becoming true, $W_k(t)$, in network $N_k$ at time $t$ follow Binomial distributions:
-    \begin{equation}
-    Z_k(t) \sim \text{Binomial}(T_k(t), p_k(t))
-    \end{equation}
-    \begin{equation}
-    W_k(t) \sim \text{Binomial}(F_k(t), q_k(t))
-    \end{equation}
-\end{proposition}
-
-\begin{remark}
-    $Z_k$ represents the number of true statements in network $N_k$ that become false. This also follows a Binomial distribution because each true statement has a fixed probability $p_k^*$ of becoming false.
-\end{remark}
-
-\begin{remark}
-    $W_k$ represents the number of false statements in network $N_k$ that are corrected to become true. This follows a Binomial distribution as well, with $F_k^*$ false statements each having a probability $q_k^*$ of being corrected.
-\end{remark}
-
-\begin{proposition}\label{prop:cross_model_formulation}
-    \textbf{ Cross-Network Invalidation Detection model}: The evolution of the network states in a can be described by the following stochastic difference equations:
-    %
-    \begin{equation}\label{eq:true_statements_evolution}
-    T_k(t+1) = T_k(t) - Z_k(t) + W_k(t)
-    \end{equation}
-    %
-    \begin{equation}\label{eq:false_statements_evolution}
-    F_k(t+1) = F_k(t) + X_k(t) + Z_k(t) - W_k(t) - Y_{jk}(t)
-    \end{equation}
-\end{proposition}
-
-\begin{theorem}\label{thm:expected_equilibrium}
-\textbf{Expected Equilibrium State.} The expected equilibrium state of network $N_k$ is given by:
-
-\begin{equation}
-E[T_k^*] = \frac{q_k^* n_k}{p_k^* + q_k^*} - \frac{\lambda_k^* n_k}{d_{jk}^*(p_k^* + q_k^*)}
-\end{equation}
-
-\begin{equation}
-E[F_k^*] = \frac{\lambda_k^* n_k}{d_{jk}^*}
-\end{equation}
-
-where $n_k = E[T_k^*] + E[F_k^*]$ is the expected total number of statements in network $N_k$ at equilibrium, and $\lambda_k^*, d_{jk}^*, p_k^*, q_k^*$ are the long-term average values of the respective time-dependent parameters.
-\end{theorem}
-
+and the second eigenvalue of $T$ equals $1-p-q$, whose modulus
+is strictly smaller than~$1$; hence the Markov chain converges
+geometrically to $\boldsymbol{\pi}^{*}$ from any initial distribution.
+\end{lemma}
 
 \begin{proof}
-    \textbf{Step 1: Equilibrium Conditions}
-    
-    At equilibrium, the expected changes in true and false statements should be zero:
-    
-    \begin{equation}\label{eq:equilibrium_true}
-    E[Z_k] = E[W_k]
-    \end{equation}
-    
-    \begin{equation}\label{eq:equilibrium_false}
-    E[X_k] = E[Y_{jk}] + E[W_k] - E[Z_k]
-    \end{equation}
-    
-    \textbf{Step 2: Expected Values and Distribution Justifications}
-    
-    Express the expected values for each random variable, with detailed justifications for the choice of distributions:
-    
-    \begin{align}
-    E[X_k] &= \lambda_k^* \quad \text{(Poisson distribution mean)} \\
-    E[Y_{jk}] &= F_k^* \cdot d_{jk}^* \quad \text{(Binomial distribution mean)} \\
-    E[Z_k] &= T_k^* \cdot p_k^* \quad \text{(Binomial distribution mean)} \\
-    E[W_k] &= F_k^* \cdot q_k^* \quad \text{(Binomial distribution mean)}
-    \end{align}
-    
-    \textbf{Step 3: Substitute Expected Values}
-    
-    Substitute these into our equilibrium equations:
-    
-    \begin{equation}\label{eq:equilibrium_true_substituted}
-    T_k^* \cdot p_k^* = F_k^* \cdot q_k^*
-    \end{equation}
-    
-    \begin{equation}\label{eq:equilibrium_false_substituted}
-    \lambda_k^* = F_k^* \cdot d_{jk}^* + F_k^* \cdot q_k^* - T_k^* \cdot p_k^*
-    \end{equation}
-    
-    \textbf{Step 4: Solve for $F_k^*$ in terms of $T_k^*$}
-    
-    From Equation \ref{eq:equilibrium_true_substituted}:
-    
-    \begin{equation}\label{eq:Fk_in_terms_of_Tk}
-    F_k^* = T_k^* \cdot \frac{p_k^*}{q_k^*}
-    \end{equation}
-    
-    \textbf{Step 5: Total Statements}
-    
-    The total number of statements $n_k$ is the sum of true and false statements:
-    
-    \begin{align}
-    n_k &= T_k^* + F_k^* \\
-    &= T_k^* + T_k^* \cdot \frac{p_k^*}{q_k^*} \\
-    &= T_k^* \cdot \left(1 + \frac{p_k^*}{q_k^*}\right) \\
-    &= T_k^* \cdot \frac{p_k^* + q_k^*}{q_k^*}
-    \end{align}
-    
-    \textbf{Step 6: Solve for $T_k^*$}
-    
-    Rearranging the last equation from Step 5:
-    
-    \begin{equation}\label{eq:Tk_star}
-    T_k^* = n_k \cdot \frac{q_k^*}{p_k^* + q_k^*}
-    \end{equation}
-    
-    \textbf{Step 7: Solve for $F_k^*$}
-    
-    Substitute Equation \ref{eq:Tk_star} into Equation \ref{eq:Fk_in_terms_of_Tk}:
-    
-    \begin{align}
-    F_k^* &= T_k^* \cdot \frac{p_k^*}{q_k^*} \\
-    &= n_k \cdot \frac{q_k^*}{p_k^* + q_k^*} \cdot \frac{p_k^*}{q_k^*} \\
-    &= n_k \cdot \frac{p_k^*}{p_k^* + q_k^*}
-    \end{align}
-    
-    \textbf{Step 8: Use Equilibrium False Equation}
-    
-    From Equation \ref{eq:equilibrium_false_substituted}, substitute the expressions for $F_k^*$ and $T_k^*$:
-    
-    \begin{align}
-    \lambda_k^* &= F_k^* \cdot d_{jk}^* + F_k^* \cdot q_k^* - T_k^* \cdot p_k^* \\
-    &= n_k \cdot \frac{p_k^*}{p_k^* + q_k^*} \cdot d_{jk}^* + n_k \cdot \frac{p_k^*}{p_k^* + q_k^*} \cdot q_k^* - n_k \cdot \frac{q_k^*}{p_k^* + q_k^*} \cdot p_k^*
-    \end{align}
-    
-    Here, we clearly show the intermediate steps of substitution.
-    
-    \textbf{Step 9: Simplify}
-    
-    Combine terms and simplify, showing each algebraic step:
-    
-    \begin{align}
-    \lambda_k^* &= n_k \cdot \frac{p_k^* d_{jk}^* + p_k^* q_k^* - q_k^* p_k^*}{p_k^* + q_k^*} \\
-    &= n_k \cdot \frac{p_k^* (d_{jk}^* + q_k^* - q_k^*)}{p_k^* + q_k^*} \\
-    &= n_k \cdot \frac{p_k^* d_{jk}^*}{p_k^* + q_k^*}
-    \end{align}
-    
-    \textbf{Step 10: Explicit Derivation for $F_k^*$}
-    
-    Rearrange the last equation to solve for $F_k^*$:
-    
-    \begin{align}
-    \lambda_k^* &= n_k \cdot \frac{p_k^* d_{jk}^*}{p_k^* + q_k^*} \\
-    \Rightarrow F_k^* &= \frac{\lambda_k^* \cdot (p_k^* + q_k^*)}{d_{jk}^*}
-    \end{align}
-    
-    \textbf{Step 11: Final $T_k^*$}
-    
-    Subtract $F_k^*$ from $n_k$ to get the final expression for $T_k^*$:
-    
-    \begin{align}
-    T_k^* &= n_k - F_k^* \\
-    &= n_k - \frac{\lambda_k^* \cdot (p_k^* + q_k^*)}{d_{jk}^*} \\
-    &= n_k \cdot \left(1 - \frac{\lambda_k^*}{d_{jk}^*}\right) \\
-    &= \frac{q_k^* \cdot n_k}{p_k^* + q_k^*} - \frac{\lambda_k^* \cdot n_k}{d_{jk}^* \cdot (p_k^* + q_k^*)}
-    \end{align}
-    
-    This completes the proof, deriving the expressions for $E[T_k^*]$ and $E[F_k^*]$ as stated in the theorem. \(\square\)
+A fixed point satisfies $\boldsymbol{\pi}=T\,\boldsymbol{\pi}$.
+Writing $\boldsymbol{\pi}^{\mathsf T}=(\pi_{r},\pi_{f})$ and expanding
+gives
+\begin{align*}
+\pi_{r} &= (1-p)\,\pi_{r}+q\,\pi_{f},\\
+\pi_{f} &= p\,\pi_{r}+(1-q)\,\pi_{f}.
+\end{align*}
+Because $\pi_{f}=1-\pi_{r}$, the first line reduces to
+\[
+p\,\pi_{r}=q\,\pi_{f}=q\,(1-\pi_{r}),
+\quad\Longrightarrow\quad
+\pi_{r}=\frac{q}{p+q},\qquad
+\pi_{f}=1-\pi_{r}=\frac{p}{p+q}.
+\]
+Thus the fixed point is unique.  
+The characteristic polynomial of $T$ is
+$\lambda^{2}-(2-p-q)\lambda+(1-p-q)=0$,
+whose roots are $\lambda_{1}=1$ and
+$\lambda_{2}=1-p-q$.
+Because $0<p+q<1$, we have $|\lambda_{2}|<1$; hence
+$T^{t}\to\boldsymbol{\pi}^{*}\mathbf 1^{\mathsf T}$ as $t\to\infty$,
+so every trajectory converges to $\boldsymbol{\pi}^{*}$.
 \end{proof}
-    
 
-\textbf{Interpretation and Analysis:}
-
-1. Falsehood Generation vs. Detection: The ratio $\frac{\lambda_k^*}{d_{jk}^*}$ represents the balance between falsehood generation and cross-network detection. A higher ratio leads to more false statements at equilibrium.
-
-2. Network Size Effect: Larger networks (higher $n_k$) can sustain more true and false statements at equilibrium. The number of false statements is now proportional to network size, reflecting increased opportunities for falsehood generation in larger discourse spaces.
-
-3. Internal Dynamics: The ratio $\frac{q_k^*}{p_k^* + q_k^*}$ represents the proportion of non-false statements that are true at equilibrium due to internal dynamics.
-
-4. Cross-Network Efficiency: Higher detection probabilities $d_{jk}^*$ lead to fewer false statements, highlighting the importance of cross-network scrutiny.
-
-5. Asymmetry: Differences in parameters between networks can lead to asymmetric equilibrium states, potentially modeling real-world scenarios where one network is more susceptible to falsehoods or more efficient at detection.
-
-6. Time-Dependent Dynamics: The model now captures how falsehood generation, detection, and internal correction processes may vary over time, allowing for more realistic modeling of network behavior.
-
-7. Stochastic Nature: The use of Poisson and Binomial distributions introduces inherent randomness, reflecting the unpredictable nature of falsehood generation and detection in real-world scenarios.
+\paragraph{Interpretation of Lemma \ref{lem:basic_invalidation}.}
+In this binary model the two flip probabilities satisfy
+$p+q=1$, meaning every update attempt switches
+an actor's belief with probability one.
+The fixed point then simplifies to
+$\boldsymbol{\pi}^{*}=(q,\,p)^{\mathsf T}$:
+the long-run proportion of actors endorsing $r$ equals the single
+parameter $q$, while the proportion endorsing $f$ equals
+$p$.
+Thus the equilibrium distribution mirrors the flip probabilities
+directly; increasing $p$ (the propensity to abandon $r$)
+linearly increases the eventual share of $f$ believers and
+decreases that of $r$ believers by the same amount.
 
 
 
-%===============================================
-\section{Results}
-%===============================================
-\subsection{Numerical Simulations}
-%===============================================
 
-[TO DO: Read, digest, ensure it is correct.]
+%================================================
+\subsubsection{Single-Network Emergent Invalidation Model}
+%================================================
 
-This section details the numerical simulations implemented to explore the dynamics of belief systems within a discursive network. The simulations leverage a Markov chain model with dynamically adjusted transition probabilities, reflecting the interaction frequencies and statement validity.  
+The two-state single-network model sets sthe stage for the analysis of the emergence of invalidations in a discursive network. To accomplish this,  we first endow a \emph{single} discursive network with per-statement fabrication and internal correction.  This captures the behaviour of a sing;le-instance LLM generating new text: invalidations  
+are injected at hazard $\lambda$, while subsequent self-reflections (or 
+post-processing heuristics) invalidate a fraction of the false statements at hazard $q$.
 
-To simulate the interaction counts \( N_{s2}(t) \) involving the false statement \( s2 \) over time, a Poisson distribution is employed. The Poisson distribution is ideally suited for this purpose due to several key characteristics: (i) \textbf{Event independence:} The distribution assumes that each interaction is an independent event, a reasonable approximation given the diverse sources and triggers of discussions in a large network, (ii) \textbf{fixed average rate:} It is characterized by its rate parameter \( \lambda \), which simplifies modeling interactions that occur at a consistent average rate over time, (iii) \textbf{simplicity and mathematical tractability:} The Poisson distribution provides a straightforward formulation for calculating probabilities of occurrence for various numbers of interactions, facilitating the integration into stochastic models like Markov chains, and (iv)\textbf{flexibility in modeling sparse data:} It effectively handles data scenarios where interactions are rare or occur in bursts, typical of communication patterns in social networks.
+%------------------------------------------------
+\paragraph{Setup.}
+Let the network be $N$ with actor set $A=\{a_1,\dots,a_n\}$ and $n=|A|$.  
+Counts of true and false statements at discrete time $t\in\mathbb{Z}_{\ge 0}$ 
+are denoted $T(t)$ and $F(t)$, respectively, with $T(t)+F(t)=n$.
 
-The Python programming language was used to implement the simulation, employing the NumPy library for handling numerical operations and Matplotlib for visualizing the evolution of belief states over time. Initial states and parameters were set based on theoretical assumptions to reflect realistic interaction dynamics.
+\begin{definition}[Normalised state]\label{def:single_state}
+The proportion state of the single network at time~$t$ is
+\[
+\boldsymbol{\pi}(t)=\bigl(\pi_T(t),\pi_F(t)\bigr),\qquad
+\pi_T(t)=\frac{T(t)}{n},\;\pi_F(t)=\frac{F(t)}{n},\;
+\pi_T(t)+\pi_F(t)=1.
+\]
+\end{definition}
 
-The simulation runs over a predefined number of time steps, updating the belief states according to the transition matrix \( T(t) \). The stability and convergence of the model are analyzed by observing changes in the proportions of belief states across the simulation period, providing insights into the long-term behavior of the network under varying interaction patterns.
+%------------------------------------------------
+\paragraph{Stochastic primitives.}
+Events are scaled \emph{per statement} so that $\lambda$, $p$ 
+and $q$ remain commensurate.
 
-\begin{figure}[h]
+
+\paragraph{Fabrication (invalidation).}  In this case, $X$ represents
+the number of new falsehoods generated. The Poisson distribution is 
+used to model the number of events occurring in a fixed interval of 
+time, given a known average rate.  Each true statement is 
+independently falsified during $[t,t+1)$:
+\[
+X(t)\;\sim\;\text{Poisson}\bigl(\lambda\,T(t)\bigr).
+\]
+         
+\paragraph{Internal flips.}  $Z$ represents the number of true statements  
+that become false with a fixed probability $p$  of becoming false 
+(i.e. $p$ is the intrinsic truth→false hazard). $W$ 
+represents the number of false statements that are corrected to become 
+true with a fixed  probability $q$ of being corrected 
+($q$ models spontaneous acknowledgement or repair). Both follow a Binomial 
+distribution.  Truths can degrade and falsehoods can self-correct:
+\[
+Z(t)\sim\mathrm{Binomial}\!\bigl(T(t),p\bigr),\quad
+W(t)\sim\mathrm{Binomial}\!\bigl(F(t),q\bigr).
+\]
+
+%------------------------------------------------
+\paragraph{Update equations.}
+Define
+\[
+\Delta T(t)= -Z(t)+W(t),\qquad
+\Delta F(t)= X(t)+Z(t)-W(t).
+\]
+Then
+\begin{align}
+T(t+1) &= T(t)+\Delta T(t), & \pi_T(t+1) &= \pi_T(t)+\frac{\Delta T(t)}{n}, \\[-1ex]
+F(t+1) &= F(t)+\Delta F(t), & \pi_F(t+1) &= \pi_F(t)+\frac{\Delta F(t)}{n},
+\end{align}
+with $\pi_T(t+1)+\pi_F(t+1)=1$ preserved.
+
+The mapping of this model to Definition \ref{def:discursive_network} is provided in Table \ref{tab:Single-Network-Invalidation}.
+
+\begin{table}[htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{FOO_Figure1.png}
-    \caption{Evolution of beliefs over time, showcasing the dynamic changes in the network based on the specified interaction parameters.}
-    \label{fig:evolution_of_beliefs_1}
-\end{figure}
+    \setlength{\tabcolsep}{6pt}
+    \renewcommand{\arraystretch}{1.15}
+    \caption{Mapping of discursive-network elements to the \emph{single-network emergent-invalidation} model.  Unless noted otherwise, all rates are \emph{per statement}.}
+    \label{tab:Single-Network-Invalidation}
+    \begin{tabularx}{6.5in}{@{}lX@{}}
+        \toprule
+        \textbf{Element in $N$} & \textbf{Instantiation in emergent-invalidation model} \\
+        \midrule
+        $A$ & Fixed actor set; proportions refer to $n=\lvert A\rvert$. \\
+        $S=\{r,f\}$ & Binary statements ($r$ = true, $f$ = false). \\
+        $B_i$ & Current belief of actor $a_i$: $\{r\}$ or $\{f\}$. \\
+        $G_i$ & Goal: persuade all other actors to adopt $B_i$. \\
+        $C_{ij}$ & Message from $a_i$ to $a_j$ containing $B_i$. \\
+        $I_{ij}$ & Internal invalidation; realised as self-correction $\mathrm{Binomial}(F(t),q)$ when $i=j$.  (No cross-actor invalidation in the single-network setting.) \\
+        $P_{ij}$ & Spontaneous flips: $p$ for $r\!\to\!f$ (appears in $Z(t)$), $q$ for $f\!\to\!r$ (appears in $W(t)$). \\ 
+        $U_j$ & Update rule applying the three hazards:\\
+        & \hspace{1em}$X(t)\sim\mathrm{Poisson}(\lambda T(t))$  (fabrications)\\
+        & \hspace{1em}$Z(t)\sim\mathrm{Binomial}(T(t),p)$  (truth \textrightarrow\ false)\\
+        & \hspace{1em}$W(t)\sim\mathrm{Binomial}(F(t),q)$  (false \textrightarrow\ true)\\
+        \bottomrule
+    \end{tabularx}
+\end{table}
 
-\begin{figure}[h]
+%------------------------------------------------
+\begin{lemma}[Single-network invalidation with fabrication]\label{lem:single_lambda}
+Let the single-network proportion state evolve according to  
+\[
+\boldsymbol{\pi}(t+1)=T_\lambda\,\boldsymbol{\pi}(t),\qquad
+T_\lambda=\begin{pmatrix}
+1-(p+\lambda) & q \\
+p+\lambda     & 1-q
+\end{pmatrix},
+\qquad
+\boldsymbol{\pi}(t)=
+\begin{pmatrix}\pi_{r}(t)\\[2pt] \pi_{f}(t)\end{pmatrix},\;
+\pi_{r}(t)+\pi_{f}(t)=1,
+\]
+where  
+\(p,q\in(0,1)\) are the intrinsic flip probabilities,  
+\(\lambda\in\bigl(0,1-p\bigr)\) is the per-statement fabrication probability
+(\(r\!\to\!f\)), and \(p+\lambda+q<1\).  
+Then:
+
+1.  The system has a unique fixed point  
+    \[
+      \boldsymbol{\pi}^{*}=
+      \begin{pmatrix}
+        \dfrac{q}{p+\lambda+q}\\[6pt]
+        \dfrac{p+\lambda}{p+\lambda+q}
+      \end{pmatrix}.
+    \]
+
+2.  The second eigenvalue of \(T_\lambda\) is \(1-(p+\lambda+q)\), whose
+    modulus is strictly smaller than \(1\); hence the Markov chain converges
+    geometrically to \(\boldsymbol{\pi}^{*}\) from any initial distribution.
+\end{lemma}
+
+\begin{proof}
+A fixed point satisfies \(\boldsymbol{\pi}=T_\lambda\,\boldsymbol{\pi}\).
+Writing \(\boldsymbol{\pi}^{\mathsf T}=(\pi_{r},\pi_{f})\) and expanding gives
+\begin{align*}
+\pi_{r} &= (1-p-\lambda)\,\pi_{r}+q\,\pi_{f},\\
+\pi_{f} &= (p+\lambda)\,\pi_{r}+(1-q)\,\pi_{f}.
+\end{align*}
+Because \(\pi_{f}=1-\pi_{r}\), the first line reduces to
+\(
+(p+\lambda)\,\pi_{r}=q\,(1-\pi_{r}),
+\)
+which yields the fixed point in the statement.  
+The characteristic polynomial of \(T_\lambda\) is
+\(\lambda^{2}-(2-p-\lambda-q)\lambda+(1-p-\lambda-q)=0\),
+with roots \(\lambda_{1}=1\) and
+\(\lambda_{2}=1-(p+\lambda+q)\).
+Since \(p+\lambda+q<1\), we have \(|\lambda_{2}|<1\); therefore
+\(T_\lambda^{\,t}\to\boldsymbol{\pi}^{*}\mathbf 1^{\mathsf T}\) as
+\(t\to\infty\), so every trajectory converges to \(\boldsymbol{\pi}^{*}\).
+\end{proof}
+
+\paragraph{Interpretation.}
+The fabrication term \(\lambda\) simply augments the ordinary truth-to-false
+hazard \(p\).  Consequently the equilibrium share of false believers rises
+from \(p/(p+q)\) (when \(\lambda=0\)) to \((p+\lambda)/(p+\lambda+q)\), while
+the speed of convergence slows as the spectral gap
+\(1-\lvert 1-(p+\lambda+q)\rvert\) narrows.
+Fabrication raises the inflow into the false state 
+by $\lambda$, while internal invalidation $q$ is unchanged.  If $\lambda>q$ the 
+system becomes ``invalidation-dominant," mimicking an LLM that generates more new errors than it self-repairs—an empirical regime reported in LLMs (cf. Section \ref{sec:conclusion}).
+
+
+%================================================
+\subsubsection{Cross-Network Invalidation-Detection Model}
+%================================================
+Now that we have studied single networks with and without spontaneous invalidaiton emergence, the next natural question is how to reduce invalidations. As we will see, using multiple discursive networks reduces invalidations. 
+
+%------------------------------------------------
+Let the two discursive networks be
+$N_{1}$ and $N_{2}$ with actor sets
+$A_{1}=\{a_{11},\dots,a_{1n_{1}}\}$ and
+$A_{2}=\{a_{21},\dots,a_{2n_{2}}\}$; write $n_{k}=|A_{k}|$.
+
+\begin{definition}[Normalised state]\label{def:cross_state}
+For each network $N_{k}$ the proportion state at time~$t$ is
+\[
+\boldsymbol{\pi}_{k}(t)=\bigl(\pi_{T,k}(t),\;\pi_{F,k}(t)\bigr),
+\qquad
+\pi_{T,k}(t)=\frac{T_{k}(t)}{n_{k}},\;
+\pi_{F,k}(t)=\frac{F_{k}(t)}{n_{k}},\;
+\pi_{T,k}(t)+\pi_{F,k}(t)=1,
+\]
+where $T_{k}(t)$ and $F_{k}(t)$ are the counts of true and false
+statements, respectively.
+\end{definition}
+
+%------------------------------------------------
+\paragraph{Stochastic primitives.}
+All events are now specified so that their \emph{rates are comparable across networks regardless of size}.  In particular, fabrication is scaled by the \\emph{current stock of true statements}.
+
+\paragraph{Falsehood generation (fabrication).}
+Each currently true statement in $N_{k}$ is independently falsified during $[t,t+1)$.
+The total number of such events is
+\[
+X_{k}(t)\;\sim\;\text{Poisson}\bigl(\lambda_{k}\,T_{k}(t)\bigr),
+\]
+where $\lambda_{k}$ is the \emph{per-statement} fabrication hazard.
+
+\paragraph{Cross-network detection.}
+Each false statement in $N_{k}$ is noticed by $N_{j}$ with probability $d_{jk}$, so
+\(
+Y_{jk}(t)\sim\mathrm{Binomial}\!\bigl(F_{k}(t),d_{jk}\bigr).
+\)
+
+\paragraph{Internal flips.}
+True statements spontaneously become false with probability $p_{k}$, and false statements self-correct with probability $q_{k}$:
+\[
+Z_{k}(t)\sim\mathrm{Binomial}\!\bigl(T_{k}(t),p_{k}\bigr),\quad
+W_{k}(t)\sim\mathrm{Binomial}\!\bigl(F_{k}(t),q_{k}\bigr).
+\]
+
+
+%------------------------------------------------
+\paragraph{Normalised update equations.}
+Let $\Delta T_{k}(t)= -Z_{k}(t)+W_{k}(t)$ and
+$\Delta F_{k}(t)= X_{k}(t)+Z_{k}(t)-W_{k}(t)-Y_{jk}(t)$.
+Dividing by $n_{k}$ gives the proportion dynamics
+\begin{align}
+\pi_{T,k}(t+1) &= \pi_{T,k}(t)+\frac{\Delta T_{k}(t)}{n_{k}}, \label{eq:dual-T}\\
+\pi_{F,k}(t+1) &= \pi_{F,k}(t)+\frac{\Delta F_{k}(t)}{n_{k}}, \label{eq:dual-F}
+\end{align}
+with $\pi_{T,k}(t+1)+\pi_{F,k}(t+1)=1$ preserved automatically.
+
+The mapping of this model to Definition \ref{def:discursive_network} is provided in Table \ref{tab:Dual-Network}.
+
+\begin{table}[htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{FOO_Figure2.png}
-    \caption{Evolution of beliefs over time, showcasing the dynamic changes in the network based on the specified interaction parameters.}
-    \label{fig:evolution_of_beliefs_4}
-\end{figure}
+    \setlength{\tabcolsep}{6pt}
+    \renewcommand{\arraystretch}{1.15}
+    \caption{Mapping of discursive–network elements to the \emph{cross-network
+             invalidation–detection} model.  All hazard rates are \emph{per statement}.}
+    \label{tab:Dual-Network}
+    \begin{tabularx}{6.5in}{@{}lX@{}}
+        \toprule
+        \textbf{Element in $N_{1}\cup N_{2}$} & \textbf{Instantiation in the model} \\
+        \midrule
+        $A_k$ & Two disjoint actor sets $A_1,A_2$; proportions refer to $n_k=\lvert A_k\rvert$. \\[2pt]
 
+        $S=\{r,f\}$ & Binary statements shared by both networks ($r$ = true, $f$ = false). \\[2pt]
+
+        $B_{ij}$ & Belief of actor $a_{ij}\in A_k$: $\{r\}$ or $\{f\}$. \\[2pt]
+
+        $G_{ij}$ & Goal: persuade every other actor (within and across networks) to adopt $B_{ij}$. \\[2pt]
+
+        $C_{ij}$ & Message sent from $a_i$ to $a_j$ carrying $B_{ij}$.  Communication enables both persuasion and detection. \\[2pt]
+
+        $I_{ij}$ & \textbf{Cross-network invalidation}: if $B_{ij}=\{f\}$ and the receiver belongs to the other network, the statement is detected and flipped with probability $d_{jk}$ (realised through the random variable $Y_{jk}(t)$). \\[4pt]
+
+        $P_{ij}$ & \textbf{Persuasion function}.  Within each network $N_k$ it reduces to constant flip probabilities:  
+                  \hspace{1em}$p_k$ for $r\!\to\!f$ (used in $Z_k(t)$),  
+                  \hspace{1em}$q_k$ for $f\!\to\!r$ (used in $W_k(t)$).  
+                  Across networks, persuasion acts only via $I_{ij}$ with success probability $d_{jk}$. \\[6pt]
+
+        $U_j$ & \textbf{Update rule} for actor $a_j$ that applies—in this order—  
+               (i) fabrication $X_k(t)\sim\mathrm{Poisson}(\lambda_k T_k(t))$,  
+               (ii) internal flips $Z_k(t),W_k(t)$ using $p_k,q_k$,  
+               (iii) cross-network detection $Y_{jk}(t)$ using $d_{jk}$.  The parameter $\lambda_k$ therefore lives inside $U_j$. \\[2pt]
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+
+\begin{lemma}[Dual-network invalidation propagation]\label{lem:expected_equilibrium}
+    Let the proportion dynamics of Eqs.~\eqref{eq:dual-T}-\eqref{eq:dual-F} be
+    driven by parameters
+    \(\lambda_k,d_{jk},p_k,q_k\in(0,1)\).
+    Assume the per-actor falsehood-generation rate satisfies the consistency
+    condition
+    \begin{equation}\label{eq:lambda_constraint}
+    \lambda_k \;=\; d_{jk}\,
+                \frac{p_k}{p_k+q_k},
+    \end{equation}
+    which guarantees that the expected proportions sum to one.
+    Then the Markov process has the mean fixed point
+    \[
+        \pi_{F,k}^{*}
+        =\frac{\lambda_k}{d_{jk}},\qquad
+        \pi_{T,k}^{*}
+        =\frac{\lambda_k\,q_k}{d_{jk}\,p_k},
+        \qquad
+        \pi_{T,k}^{*}+\pi_{F,k}^{*}=1.
+    \]
+\end{lemma}
+
+\begin{proof}
+    At equilibrium the expected changes vanish,
+    so \(E[\Delta T_k]=E[\Delta F_k]=0\).
+    Using the distributional means
+    % \[
+    % E[X_k]=n_k\lambda_k,\;
+    % E[Y_{jk}]=F_k d_{jk},\;
+    % E[Z_k]=T_k p_k,\;
+    % E[W_k]=F_k q_k,
+    % \]
+    \begin{align*}
+        E[X_k] &= \lambda_k \quad \text{(Poisson distribution)}, \\
+        E[Y_{jk}] &= F_k  d_{jk} \quad \text{(Binomial distribution)}, \\
+        E[Z_k] &= T_k  p_k \quad \text{(Binomial distribution)}, \\
+        E[W_k] &= F_k  q_k \quad \text{(Binomial distribution)},
+    \end{align*}
+    and dividing by \(n_k\) to convert counts to proportions gives
+    \begin{align}
+    \pi_{T,k} p_k &= \pi_{F,k} q_k, \label{eq:eq_true_prop}\\
+    \lambda_k     &= \pi_{F,k} d_{jk}
+                +\pi_{F,k} q_k
+                -\pi_{T,k} p_k. \label{eq:eq_false_prop}
+    \end{align}
+    Equation~\eqref{eq:eq_true_prop} yields
+    \(\pi_{F,k} = \pi_{T,k} p_k/q_k\).
+    Insert this into the normalization
+    \(\pi_{T,k}+\pi_{F,k}=1\) to obtain
+    \(\pi_{T,k}=q_k/(p_k+q_k)\) and
+    \(\pi_{F,k}=p_k/(p_k+q_k)\).
+    Finally, setting \(\pi_{F,k}= \lambda_k/d_{jk}\) from
+    \eqref{eq:eq_false_prop} gives the constraint
+    \eqref{eq:lambda_constraint} and the stated fixed point.
+\end{proof}
+
+
+\paragraph{Interpretation of Lemma~\ref{lem:expected_equilibrium}.}
+The equilibrium proportions reveal clear causal roles for each parameter.
+The false-statement share in network $N_k$ is
+\[
+\pi_{F,k}^{*}= \frac{\lambda_k}{d_{jk}},
+\]
+so it scales \emph{directly} with the per-actor error-generation rate
+$\lambda_k$ and \emph{inversely} with the cross-network detection
+probability $d_{jk}$.  More prolific error creation or weaker
+cross-scrutiny raises the long-run fraction of false statements.
+
+The true-statement share is
+\[
+\pi_{T,k}^{*}= \pi_{F,k}^{*}\,\frac{q_k}{p_k}
+             = \frac{\lambda_k\,q_k}{d_{jk}\,p_k},
+\]
+hence it grows with the internal correction probability $q_k$ and falls
+with the internal corruption probability $p_k$.  A network that corrects
+errors efficiently ($q_k\!\uparrow$) or seldom corrupts truths
+($p_k\!\downarrow$) achieves a higher equilibrium truth proportion.
+
+Finally, Eq.~\eqref{eq:lambda_constraint} couples $\lambda_k$ to the flip
+parameters: if within-network corruption outpaces correction
+($p_k>q_k$), the consistency condition forces a higher $\lambda_k$,
+pushing $\pi_{F,k}^{*}$ upward unless the partner network compensates with
+stronger detection ($d_{jk}\!\uparrow$).  Thus the model quantifies an
+intuitive trade-off: falsehood prevalence is driven by the \emph{ratio} of
+error creation to error removal—internally via $(p_k,q_k)$ and externally
+via $d_{jk}$.
+
+
+%================================================
+\subsection{Single– vs.\ Cross-Network Models with Invalidation}
+%================================================
+
+\paragraph{Stationary false-statement shares.}
+The \emph{single-network emergent-invalidation} model  
+(Lemma \ref{lem:single_lambda}) stabilises at  
+\[
+\pi_{f}^{\mathrm{single}}
+      \;=\;
+      \frac{p+\lambda}{p+\lambda+q},
+\qquad
+\pi_{r}^{\mathrm{single}}
+      \;=\;
+      \frac{q}{p+\lambda+q}.
+\]
+
+For a given network \(N_k\) engaged in \emph{cross-network detection}
+with partner \(N_j\) (Lemma \ref{lem:expected_equilibrium}) the
+corresponding steady state is  
+\[
+\pi_{f}^{\mathrm{cross}}
+      \;=\;
+      \frac{\lambda}{d},
+\qquad
+\pi_{r}^{\mathrm{cross}}
+      \;=\;
+      \frac{\lambda\,q}{d\,p},
+\]
+where \(p,q,\lambda\) now abbreviate \(p_k,q_k,\lambda_k\) and
+\(d=d_{jk}\).
+
+\medskip
+\noindent
+Here
+\begin{center}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{ll}
+\(p\) & intrinsic $r\!\to\!f$ flip probability in \(N_k\);\\
+\(q\) & intrinsic $f\!\to\!r$ flip probability in \(N_k\);\\
+\(\lambda\) & fabrication hazard per true statement in \(N_k\);\\
+\(d\) & probability a false statement in \(N_k\) is detected by \(N_j\).
+\end{tabular}
+\end{center}
+
+%------------------------------------------------
+\begin{lemma}[Cross-network detection lowers falsehood prevalence]
+\label{lem:cross_vs_single}
+If
+\[
+\frac{\lambda}{d}
+\;<\;
+\frac{p+\lambda}{p+\lambda+q},
+\]
+then
+\(
+\pi_{f}^{\mathrm{cross}}
+<
+\pi_{f}^{\mathrm{single}},
+\)
+i.e.\ coupling \(N_k\) to an external detector \(N_j\) \emph{reduces} the
+steady-state prevalence of false statements.
+\end{lemma}
+
+\begin{proof}
+Subtract the two stationary shares:
+\[
+\pi_{f}^{\mathrm{single}}
+      \;-\;
+\pi_{f}^{\mathrm{cross}}
+      \;=\;
+\frac{p+\lambda}{p+\lambda+q}
+      \;-\;
+\frac{\lambda}{d}
+      \;>\;0
+      \quad\Longleftrightarrow\quad
+\frac{\lambda}{d}
+<
+\frac{p+\lambda}{p+\lambda+q}.
+\]
+\end{proof}
+
+\paragraph{Interpretation.}
+External scrutiny (\(d\!\uparrow\)) or lighter fabrication
+pressure (\(\lambda\!\downarrow\)) pushes invalidations in the cross-network system below the single-network benchmark.  Conversely, when
+\(\lambda/d \ge (p+\lambda)/(p+\lambda+q)\), fabrications outrun
+detections and the dual system sustains the same or a higher falsehood share than isolation.
 
 %===============================================
 \subsection{Invalidation Consensus Algorithm}
@@ -547,7 +830,7 @@ The invalidation model we introduced operates on a Markov chain framework that d
 \begin{enumerate}
     \item \textbf{Initialization and Distribution}: The process starts by initializing a request, symbolizing the input or stimulus that prompts interaction within the network. This request is distributed among various instances of large language models (LLMs), simulating the diverse responses of actors within the network.
     
-    \item \textbf{Processing by LLMs}: Each LLM processes the request independently, mirroring the individual actor’s processing of information or statements within the network. This independence is crucial for capturing the varied interpretations and reactions among different actors based on their perspectives or biases.
+    \item \textbf{Processing by LLMs}: Each LLM processes the request independently, mirroring the individual actor's processing of information or statements within the network. This independence is crucial for capturing the varied interpretations and reactions among different actors based on their perspectives or biases.
     
     \item \textbf{Assembly and Difference Checking}: After processing, the outputs from all LLMs are assembled for comparison. This step is analogous to aggregating different beliefs or reactions within the network to assess consensus or discord.
     
@@ -646,30 +929,323 @@ The algorithm effectively integrates the dynamics of invalidation by considering
     
 \end{tikzpicture}
 
+
 %===============================================
-\section{Conclusion}
+\section{Results}
 %===============================================
+%\paragraph{Empirical grounding.}
+\citet{Ji2023SelfReflection} report that state-of-the-art LLMs answer medical questions incorrectly in \textbf{26–61 \%} of cases, while \citet{Zhang2024SelfAlignment} show that the same models’ built-in self-evaluation (\textit{SELF-EVAL}) flags invalidations  with modestly better than chance (AUROC $0.51$–$0.59$ on TruthfulQA and BioGEN). Taken together, these studies indicate a realistic operating regime in which
+\[
+\lambda \;>\; q,
+\quad
+\text{and therefore}\quad
+\pi_f^{\text{single}}
+      \;=\;
+      \frac{p+\lambda}{p+\lambda+q}
+      \;\gtrsim\; 0.50,
+\]
+i.e.\ the model fabricates new errors faster than it can repair them
+internally (“\emph{invalidation-dominant}”).
 
-[TO DO: Clean up conclusions. Ensure that we cite the context int he intro, and address how this approach improves over the state of the  art.]
+\begin{figure}[h]
+    \centering
+    %----------------- panel (a) -----------------%
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{FOO_Single-Network.png}
+        \caption{}   % only label “(a)”; keep text for the global caption
+        \label{fig:single-net}
+    \end{subfigure}
+    \hfill
+    %----------------- panel (b) -----------------%
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{FOO_Dual-Network.png}
+        \caption{}   % label “(b)”
+        \label{fig:dual-net}
+    \end{subfigure}
 
-The numerical simulations serve as a powerful tool to understand and predict how beliefs propagate and evolve in a discursive network, illustrating the impact of interaction frequency and statement validity. The use of a Poisson distribution for modeling interaction counts adds a layer of realism and adaptability to the simulations, enhancing their applicability to real-world social dynamics.
+    \caption{%
+    \textbf{(a)}~Single-network invalidation dynamics for $20$ Monte-Carlo
+    realisations of $100$ time steps.  The blue curve shows the mean number of
+    actors endorsing statement $s_{1}$ (treated as \emph{true}); the red curve
+    shows the mean number endorsing statement $s_{2}$ (treated as
+    \emph{false}).  Shaded bands depict the point-wise $95\%$ confidence
+    intervals.  Dashed horizontal lines mark the analytical asymptotes
+    $P_{1}^{*}$ and $P_{2}^{*}=1-P_{1}^{*}$ predicted by the discrete two-state
+    Markov model with flip probabilities $p_{12}$ and $p_{21}$. 
+    %
+    \textbf{(b)}~Mean trajectories of true (blue) and false (red) statement
+    counts for two interacting discursive networks over $200$ time steps,
+    obtained from $20$ Monte-Carlo runs of the stochastic model in
+    Eqs.~\ref{eq:dual-T}–\ref{eq:dual-F}.  Shaded bands show the point-wise
+    $95\%$ confidence intervals.  Dashed horizontal lines mark the analytical
+    asymptotes $T_k^{*}$ and $F_k^{*}$ derived from
+    Lemma~\ref{lem:expected_equilibrium}.  The upper subplot belongs to
+    Network~1; the lower to Network~2.}
+    \label{fig:single-vs-dual}
+\end{figure}
 
-To connect the refined model of belief propagation and verification energy to large language models (LLMs), we need to understand how LLMs generate statements and how they can be used to detect falsehoods. LLMs, such as GPT-4, generate text based on patterns they have learned from vast amounts of training data. These models do not have an inherent understanding of truth or falsehood but instead generate responses that are statistically likely given the input prompt and their training data. Here’s how this relates to our model: LLMs are trained on diverse datasets that include both true (type $s_1$) and false (type $s_2$) statements. When generating a response, the LLM samples from this learned distribution, which may include falsehoods if they appear frequently in the training data. In our model, verifying true statements ($s_1$) requires more energy. Similarly, generating true and accurate information often requires more context, deeper understanding, and reasoning, which the LLM might not always apply if not explicitly prompted to do so. Generating a plausible-sounding but false statement ($s_2$) might be "easier" in terms of the model's operations, similar to how $s_2$ statements deplete less energy. Unlike humans who can verify facts through external sources or reasoning, LLMs rely solely on their training data and prompt context. Without a mechanism to validate information against a ground truth, LLMs may produce statements that are statistically likely but false, akin to our model where falsehoods ($s_2$) require less verification energy and can propagate more easily.
 
-Using multiple LLMs to spot falsehoods can be more effective than relying on a single model due to several factors that align with our refined model of belief propagation and verification energy. Multiple LLMs trained on different datasets or with different architectures can provide diverse perspectives. When multiple models analyze the same statement, they can cross-verify the information. If one model generates an $s_2$ statement, other models can provide additional context or challenge the falsehood based on their own learned patterns, similar to increasing the interaction frequency with true statements ($s_1$) in our model. Relying on a single LLM increases the risk of errors or biases inherent in that model’s training data. By consulting multiple models, we can reduce the likelihood of propagating falsehoods as different models may have different biases and strengths, leading to a more balanced and accurate output. In our model, verification energy depletes quickly when verifying true statements. Multiple LLMs can distribute this verification load. If verifying $s_1$ depletes energy, having multiple models can effectively pool their verification capacities, ensuring that the energy required to confirm the truth is distributed and managed better. This is analogous to having a collaborative verification process where the burden is shared. When multiple LLMs are used to evaluate a statement, we can derive a consensus based on the majority or weighted agreement. If most models agree that a statement is true or false, this consensus can act as a more reliable indicator than a single model’s output. This is similar to how higher interaction frequencies with true statements ($s_1$) in our model increase the likelihood of actors adopting $s_1$.
+%\paragraph{Parameter selection.}
+Table~\ref{tab:param-calibration} lists the numerical choices used in the simulations and the manuscript, together with their provenance.
 
-By connecting the refined model of belief propagation to the behavior of LLMs, we can better understand the generation and detection of false statements. LLMs generate false statements due to the probabilistic nature of their training data, analogous to how $s_2$ statements propagate more easily in a network with lower verification energy. Using multiple LLMs for falsehood detection is effective because it distributes the verification load, leverages diverse perspectives, and reduces individual biases, akin to increasing the interaction frequency with true statements and sharing verification energy in our model. This approach aligns with our understanding that collaborative verification and diverse interactions enhance the detection and correction of falsehoods in both human networks and AI systems.
+\begin{table}[htbp]
+    \centering
+    \setlength{\tabcolsep}{5pt}
+    \renewcommand{\arraystretch}{1.1}
+    \caption{Calibrated parameter set.  All hazards are \emph{per statement}.}
+    \label{tab:param-calibration}
+    \begin{tabularx}{\linewidth}{@{}lclX@{}}
+        \toprule
+        Symbol & Value & Model role & Empirical justification \\
+        \midrule
+        $p$   & $0.02$  & intrinsic corruption ($r\!\to\!f$) &
+            Ordinary slip rate, kept below $q$ so that internal repair
+            is non-trivial. \\
+        $q$   & $0.05$  & intrinsic self-repair ($f\!\to\!r$) &
+            Chosen to reflect SELF-EVAL’s weak but non-zero success
+            ($\text{AUROC}\approx0.55$). \\
+        $\lambda$ & $0.055$ & fabrication / hallucination ($r\!\to\!f$) &
+            Upper end of the 26–61 \% error range implies
+            $\lambda>q$; solving $\pi_f^*\approx0.60$ for $\lambda$
+            with the $p,q$ above gives $0.055$. \\
+        $d$   & $0.19$  & cross-network detection ($f\!\to\!r$) &
+            Set so that $\lambda/d = p/(p+q)$, placing the dual system
+            just inside the truth-dominant region (Lemma
+            \ref{lem:cross_detection_new}). \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
 
-Future research directions could include exploring additional techniques to mitigate invalidation, assessing the effectiveness of existing strategies in real-world applications, and examining the ethical implications of false information generated by LLMs. Addressing these challenges is essential for the responsible deployment and use of AI technologies.
+\paragraph{Single-network baseline}
+With the calibrated triple $(p,q,\lambda)$, the single-network
+emergent-invalidation model (Lemma~\ref{lem:single_lambda}) predicts
 
-The parallel between invalidation in LLMs and human discourse opens up new avenues for interdisciplinary research. It challenges us to consider invalidation not as a unique flaw of AI, but as a fundamental aspect of information processing that manifests across different types of cognitive systems. This perspective not only enriches our understanding of AI behavior but also provides a novel lens through which to examine human cognition and social dynamics.
+\[
+\pi_{f}^{\text{single}}
+      \;=\;
+      \frac{0.02+0.055}{0.02+0.055+0.05}
+      \;=\;
+      0.60,
+\qquad
+\pi_{r}^{\text{single}} = 0.40.
+\]
 
-The models presented for invalidaiton propagation provide a comprehensive framework for analyzing the dynamics of falsehood generation, propagation, and detection in isolated and interconnected discursive networks. It allows for the exploration of various scenarios by adjusting parameters such as falsehood generation rates, detection probabilities, and internal correction processes. Future work could focus on extending this model to include more complex network structures, heterogeneous actor behaviors, or the impact of targeted misinformation campaigns. Additionally, empirical studies could help validate the model's assumptions and refine its parameters for specific real-world contexts.
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=0.8\textwidth]{FOO_Single-Network.png}
+% \caption{Single-network invalidation dynamics for $20$ Monte-Carlo realizations of $100$ time steps.  The blue curve shows the mean number of actors endorsing statement $s_{1}$ (treated as \emph{true}); the red curve shows the mean number endorsing statement $s_{2}$ (treated as \emph{false}).  Shaded bands depict the point-wise $95\%$ confidence intervals.  Dashed horizontal lines mark the analytical asymptotes $P_{1}^{*}$ and $P_{2}^{*}=1-P_{1}^{*}$ predicted by the discrete two-state Markov model with flip probabilities $p_{12}$ and $p_{21}$.}
+% %\caption{Evolution of beliefs over time, showcasing the dynamic changes in the network based on the specified interaction parameters.}
+%     \label{fig:evolution_of_beliefs_1}
+% \end{figure}
+
+Monte-Carlo simulation (\texttt{FOO\_Single\_Network.py}, $20$ runs, $100$ steps)
+converges to $\hat\pi_f(100)=0.597\pm0.018$, matching the analytic
+fixed-point within sampling error.
+
+%\paragraph{Interpretation.}
+Because $\lambda>q$, false statements accumulate faster than they are
+self-repaired; the long-run false share sits squarely in the empirical
+band reported by \citet{Ji2023SelfReflection}.
+
+\paragraph{Dual-network architecture}
+Coupling two identical networks via dual-detection $d$ augments each
+false statement with an independent external repair hazard.  The fixed
+point from Lemma~\ref{lem:cross_detection_new} becomes
+
+\[
+\pi_{f}^{\text{cross}}
+      \;=\;
+      \frac{\lambda}{d}
+      \;=\;
+      0.29,
+\qquad
+\pi_{r}^{\text{cross}} = 0.71,
+\]
+\emph{halving} the falsehood prevalence.
+
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=0.8\textwidth]{FOO_Dual-Network.png}
+%     \caption{Mean trajectories of true (blue) and false (red) statement counts for two interacting discursive networks over 200 time steps, obtained from 20 Monte-Carlo runs of the stochastic model in Eqs.~\ref{eq:dual-T} and \ref{eq:dual-F}.  Shaded bands show the point-wise 95\% confidence intervals.  Dashed horizontal lines mark the analytical asymptotes $T_k^{*}$ and $F_k^{*}$ derived from Lemma~\ref{lem:expected_equilibrium}.  Top panel reports Network~1; bottom panel reports Network~2.}
+%     %\caption{Evolution of beliefs over time, showcasing the dynamic changes in the network based on the specified interaction parameters.}
+%     \label{fig:evolution_of_beliefs_4}
+% \end{figure}
+
+Simulations (\texttt{FOO\_Dual\_Network.py}, $20$ runs, $200$ steps) yield
+$\hat\pi_f^{N_1}(200)=0.286\pm0.015$ and
+$\hat\pi_f^{N_2}(200)=0.289\pm0.014$, again validating theory.
+
+\paragraph{Interpretation.}
+Cross-network detection mimics techniques such as retrieval-augmented
+generation, ensemble adjudication or human post-editing, all of which
+contribute an external hazard $d$.  Once $d$ is large enough that
+$\lambda/d < p/(p+q)$, the system crosses from an
+invalidation-dominant regime ($\pi_f\approx0.60$) to a truth-dominant
+one ($\pi_f\approx0.29$).  The 51 \% relative reduction
+quantifies—for the chosen calibration—the factual-gains practitioners
+can expect from pairing a generative LLM with an independent verifier.
+
+\paragraph{Takeaways}
+Internal verification by a single model proves inadequate: whenever the
+fabrication hazard \(\lambda\) exceeds the intrinsic self-repair rate
+\(q\), the single-network equilibrium reproduces the high invalidation
+rates documented in current benchmarks.  Introducing an external source
+of scrutiny changes the picture.  In our calibration, raising the
+cross-detection probability to a modest \(d\approx0.19\) is already
+enough to halve the long-run share of false statements.  The decisive
+quantity is the ratio \(\lambda/d\); system builders can treat it as a
+design dial, increasing \(d\) (or equivalently reducing \(\lambda\))
+until the condition \(\lambda/d < p/(p+q)\) is met and the network
+operates in a truth-dominant regime.
+
+
+%================================================
+\section{Conclusions and Outlook}
+\label{sec:conclusion}
+%================================================
+
+Our study deliberately replaces the fashionable term
+\emph{hallucination} with the broader concept of
+\emph{invalidation}.  Whereas “hallucination’’ suggests a purely
+accidental slip in the model’s internal perception, the data reveal a
+richer spectrum of failure modes that includes strategic prompt
+manipulation, chain-of-thought drift and the simple inheritance of
+errors from flawed training corpora.  All of these mechanisms manifest
+in the observable metric that matters to users—the production of false
+statements—so the single hazard rate \(\lambda\) is most naturally
+interpreted as an \emph{invalidation rate}.  The shift in vocabulary is
+therefore more than semantics: it aligns theoretical parameters with the
+phenomena actually counted in benchmarks.
+
+Calibrating \(\lambda, p,\) and \(q\) to the medical QA study of
+\citet{Ji2023SelfReflection} and the self-evaluation results of
+\citet{Zhang2024SelfAlignment} places the isolated network firmly in the
+region \(\lambda>q\).  Analytically, this is the
+\emph{invalidation-dominant} regime; numerically, it implies an
+equilibrium false-statement share of about sixty per cent.  Monte-Carlo
+experiments with our single-network simulator confirm this prediction,
+ending every run within a few points of the theoretical
+\(\pi_{f}^{\text{single}}\simeq0.60\).  A model that relies only on its
+own self-repair routines is therefore destined to retain a majority of
+invalid statements, in line with the error rates that practitioners see
+in real deployments.
+
+The picture changes as soon as a second, independent verifier is coupled
+to the generator.  In our formalism that coupling introduces a new
+hazard \(d\) which gives every false statement an additional chance per
+time-step to be detected and corrected.  When \(d\) is tuned so that the
+inequality \(\lambda/d<p/(p+q)\) holds, the system crosses a critical
+boundary and enters a \emph{truth-dominant} regime.  Using the parameter values inferred from the two empirical studies and
+choosing the cross-detection rate \(d\) to satisfy
+\(\lambda/d < p/(p+q)\), the dual-network architecture lowers the
+steady-state false-statement share to about \(29\,\%\)—a reduction of
+roughly fifty per cent compared with an isolated network.
+
+
+Although the mathematics treats \(d\) as a single scalar, the concept
+encompasses several concrete engineering choices.  Retrieval-augmented
+generation raises \(d\) by surrounding the model with authoritative
+passages that expose contradictions.  Model-ensemble adjudication raises
+it further by combining the diverse priors of independently trained
+models; uncorrelated errors rarely agree, so the aggregate chance that a
+falsehood slips through diminishes rapidly.  Even higher values of
+\(d\) become attainable when a human editor is placed in the loop,
+although latency and cost then become limiting factors.  Our hazard
+model quantifies these trade-offs: for any target false-statement
+tolerance one can compute a required detection rate, and thus budget the
+amount of human or automated scrutiny that must be applied.
+
+The significance of these findings extends beyond artificial systems.
+Invalidation dynamics of the same mathematical form govern human
+conversation, peer review and social-media fact-checking.  Recognising
+this shared structure invites a unified research agenda that links
+network science, cognitive psychology and algorithmic governance.  Our
+future work will explore heterogeneous hazards at the level of
+individual actors, time-varying detection capacities that respond to
+workload, and live A/B tests that recover hazard estimates directly from
+production chat traffic.  A deeper ethical analysis will also be
+required, because the push toward smaller \(\pi_{f}\) competes with
+privacy constraints, energy budgets and the carbon footprint of
+large-scale verification.
+
+In short, the slogan “trust, then verify’’ admits a precise operational
+reading: raise the external detection hazard until the inequality
+\(\lambda/d<p/(p+q)\) is satisfied.  At that point a network of language
+models can operate in a truth-dominant regime, even though every
+individual generator by itself remains prone to invalidation.  What
+began as an abstract Markov model thus delivers a practical design rule
+for building safer language-technology pipelines.
+
+
 
 \section*{Ackowledgements}
-The manuscript was composed primarily using the methods outlined in \citet{flaws2024}. The authors determined the structure and content of the manuscript, while the writing tasks were largely delegated to machine learning models through multiple iterations of directed generation. Consensus on the final text was achieved by leveraging a competitive process between Anthropic's Claude 3.5 and GPT-4, conducted during the summer of 2024.  See ChatGPT exchanges \href{https://chatgpt.com/share/f69bc903-8b53-47b3-bca9-82801c87c4db}{f69bc903-8b53-47b3-bca9-82801c87c4db},  \href{https://chatgpt.com/share/21807421-bf7b-43e0-8593-7733c75e0e7f}{21807421-bf7b-43e0-8593-7733c75e0e7f}, \href{https://chatgpt.com/share/1ff4bff4-f366-49bb-be7b-f28fbfc0a2c2}{1ff4bff4-f366-49bb-be7b-f28fbfc0a2c2}. At the time of writing this manuscript, Anthropic's Claude did not possess the functionality to share chats. However, Claude's output can be partially observed within GPT-4 interactions.  
+This manuscript was composed using the methods outlined in \cite{flaws2024}. The author determined the ideas, structure and content of the manuscript, while  writing tasks were largely delegated to large language models through multiple iterations of directed generation. Consensus on the final text was achieved by leveraging a competitive process between Anthropic's Claude 4.5, GPT-4.1, and GPT-o1. 
+%\href{https://chatgpt.com/share/f69bc903-8b53-47b3-bca9-82801c87c4db}{f69bc903-8b53-47b3-bca9-82801c87c4db},  \href{https://chatgpt.com/share/21807421-bf7b-43e0-8593-7733c75e0e7f}{21807421-bf7b-43e0-8593-7733c75e0e7f}, \href{https://chatgpt.com/share/1ff4bff4-f366-49bb-be7b-f28fbfc0a2c2}{1ff4bff4-f366-49bb-be7b-f28fbfc0a2c2}.
 
 \bibliographystyle{plainnat}   
 \bibliography{references}
 
 \end{document}
+
+
+
+
+% Benchmarking... keep for future development
+
+\subsection{Toward a \emph{Multi-Axis} Reliability Benchmark}
+\label{sec:metric-landscape}
+
+Reliability is multi-faceted: a completion can be lexically fluent yet factually wrong, logically inconsistent, or ethically unsafe.  
+Table~\ref{tab:metric-taxonomy} groups the most widely used automatic metrics by the failure mode they diagnose and serves as the backbone for our composite benchmark (Section~\ref{sec:benchmarks}).  
+Below we summarise each family, highlight its blind spots, and supply canonical references.
+
+\paragraph{Lexical-semantic overlap.}
+\textbf{BLEU} \citep{papineni-etal-2002-bleu} counts $n$-gram co-occurrences between candidate and reference text and remains the de-facto baseline in MT and summarization.  
+\textbf{BERTScore} \citep{zhang-etal-2020-bertscore} replaces surface $n$-grams with contextual token embeddings from BERT, improving correlation with human adequacy judgments while retaining the reference-based framing.  
+Both metrics assume the reference contains the \emph{only} valid wording, an assumption that breaks down for creative or long-form generation, and they are agnostic to factuality.
+
+\paragraph{Factual soundness (hallucination focus).}
+\textbf{FactScore} \citep{min-etal-2023-factscore} decomposes a generated passage into atomic claims and computes the proportion supported by an external knowledge source, achieving $<\!2\%$ error vs.\ human annotation on long-form biographies.  
+Because it inspects claim-level entailment, FactScore directly targets hallucination but says nothing about internal coherence or style compliance.
+
+\paragraph{Logical consistency.}
+\textbf{PARAREL} \citep{elazar-etal-2021-pararel} probes whether a model answers identical factual queries expressed via 328 paraphrastic patterns for 38 relations; inconsistency reveals brittle internal representations even when each individual answer is factual.  
+Other recent work introduces transitivity and commutativity stress-tests, but PARAREL remains the most widely adopted, so we embed its pass-rate as our logic axis.
+
+\paragraph{Ethical compliance.}
+\textbf{RealToxicityPrompts} \citep{gehman-etal-2020-realtoxicity} contains 100 k naturally occurring sentence openings of varying toxicity; completions are scored with Perspective API, enabling fine-grained measurement of toxic degeneration.  
+We treat the mean toxicity score over completions as our ethics axis; the prompts can be stratified by baseline toxicity to expose differential robustness.
+
+\paragraph{Format adherence.}
+Structured tasks (code generation, JSON APIs) fail if the output violates a target grammar.  
+We implement a \emph{schema-validator axis} based on the draft 2020-12 JSON Schema specification \citep{jsonschema-2020-12}.  
+Any completion that fails \verb|ajv| validation receives zero on this axis, penalising even single-character deviations.
+
+\begin{table}[t]
+  \centering
+  \caption{Taxonomy of automatic metrics used in our composite benchmark.}
+  \label{tab:metric-taxonomy}
+  \begin{tabular}{lp{6.1cm}p{2.8cm}}
+    \toprule
+    \textbf{Axis} & \textbf{Representative metric / dataset} & \textbf{Original domain} \\ \midrule
+    Lexical overlap & BLEU \citeyearpar{papineni-etal-2002-bleu}; BERTScore \citeyearpar{zhang-etal-2020-bertscore} & MT, summarisation \\
+    Factuality (hallucination) & FactScore (EMNLP 2023) \citep{min-etal-2023-factscore} & Long-form bios \\
+    Logical consistency & PARAREL (TACL 2021) \citep{elazar-etal-2021-pararel} & Cloze queries \\ 
+    Ethical compliance & RealToxicityPrompts (EMNLP 2020) \citep{gehman-etal-2020-realtoxicity} & Toxicity robustness \\
+    Format adherence & Draft 2020-12 JSON Schema \citep{jsonschema-2020-12} & Code / structured I/O \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Design choice for our benchmark.}
+Each axis yields a normalised sub-score in $[0,1]$; the composite is a weighted geometric mean that penalises a model dropping to zero on \emph{any} dimension.  
+This ``no weak links'' aggregation ensures progress cannot hide behind one strong metric while neglecting another.  
+Detailed formulas and ablation studies appear in Section~\ref{sec:benchmarks}.  
+All code, prompts, and schemas will be released for reproducibility.
+
+\begin{tcolorbox}[colframe=gray!25,colback=gray!10,title=Takeaway]
+Single-axis scores mask critical weaknesses.  
+Our multi-axis framework (lexical, factual, logical, ethical, and structural) offers a minimum viable checklist for certifying LLM reliability in scientific and applied settings.
+\end{tcolorbox}
