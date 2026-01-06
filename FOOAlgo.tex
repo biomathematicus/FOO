@@ -1,0 +1,57 @@
+        \begin{tikzpicture}[node distance=1.5cm and 2cm, >=Stealth, thick, scale=0.85] 
+            % Define the styles
+            \tikzstyle{block} = [rectangle, draw, text centered, rounded corners, minimum height=1.2cm]
+            \tikzstyle{arrow} = [->, thick]
+            \tikzstyle{circle} = [circle, fill, inner sep=1.5pt]
+            \tikzstyle{decision} = [diamond, draw, text centered, minimum width=2cm, minimum height=1.5cm, inner sep=0pt]
+            \tikzstyle{stop} = [rectangle, draw, text centered, rounded corners, minimum height=1.2cm, fill=red!30]
+
+            % Nodes
+            \node (request) [block] {Request};
+            \node (cir) [block, below of=request, yshift=-0.5cm] {Distribute};
+
+            \node (llm1) [block, below of=cir, xshift=-3cm, yshift=-1cm] {LLM$_1$};
+            \node (dots1) [block, right of=llm1] {...};
+            \node (llmj) [block, right of=dots1] {LLM$_j$};
+            \node (dots2) [block, right of=llmj] {...};
+            \node (llmn) [block, right of=dots2] {LLM$_n$};
+            
+            \node (o1) [block, below of=llm1, yshift=-1cm] {$O_1$};
+            \node (dots3) [block, right of=o1] {...};
+            \node (oj) [block, below of=llmj, yshift=-1cm] {$O_j$};
+            \node (dots4) [block, right of=oj] {...};
+            \node (on) [block, below of=llmn, yshift=-1cm] {$O_n$};
+            
+            \node (concat) [block, below of=dots3, xshift=1.5cm, yshift=-1cm] {Assemble};
+            \node (decision) [decision, below of=concat, yshift=-0.5cm] {Differ?};
+            \node (stop) [stop, right of=decision, xshift=2cm] {Respond};
+            \node (consensus) [block, below of=decision, yshift=-1cm] {Add Consensus Instructions};
+            
+            % Arrows
+            \draw [arrow] (request) -- (cir);
+            \draw [arrow] (cir) -- (llm1);
+            \draw [arrow] (cir) -- (dots1);
+            \draw [arrow] (cir) -- (llmj);
+            \draw [arrow] (cir) -- (dots2);
+            \draw [arrow] (cir) -- (llmn);
+            
+            \draw [arrow] (llm1) -- (o1);
+            \draw [arrow] (dots1) -- (dots3);
+            \draw [arrow] (llmj) -- (oj);
+            \draw [arrow] (dots2) -- (dots4);
+            \draw [arrow] (llmn) -- (on);
+            
+            \draw [arrow] (o1) -- (concat);
+            \draw [arrow] (oj) -- (concat);
+            \draw [arrow] (on) -- (concat);
+            \draw [arrow] (dots3) -- (concat);
+            \draw [arrow] (dots4) -- (concat);
+            
+            \draw [arrow] (concat) -- (decision);
+            \draw [arrow] (decision) -- node[anchor=west] {Yes} (consensus);
+            
+            % Curved arrow from consensus to decision
+            \draw [arrow] (consensus.west) -- ++(-2,0) -- ++(0,12) -- (cir.west);
+            \draw [arrow] (decision.east) -- node[anchor=south] {No} (stop.west);
+            
+        \end{tikzpicture}

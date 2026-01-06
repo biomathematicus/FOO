@@ -46,7 +46,7 @@ plt.rcParams.update({
 # --------------------------------------------------------------
 # 1 · Model parameters  (same p,q,λ in both networks)
 # --------------------------------------------------------------
-num_iterations = 200      # simulation horizon
+num_iterations = 100      # simulation horizon
 epochs         = 20       # Monte-Carlo runs
 
 # intrinsic flip hazards
