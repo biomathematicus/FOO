@@ -1,0 +1,18 @@
+
+Every language model is estimating a probability distribution. In particular, it models
+[
+p(x_{t+1} \mid x_{\le t}),
+]
+the probability of the next token (x_{t+1}) given everything that came before it, (x_{\le t}).
+
+So when a language model generates text, it’s not thinking or reasoning in the human sense. It is simply predicting the most likely next token based on the previous tokens.
+
+At each step, the model produces a probability distribution (q(x)) over possible next tokens, and then it samples—or chooses—the next token from that distribution.
+
+Then that token gets appended to the context, and the process repeats:
+[
+x_1, x_2, \dots, x_t ;\longrightarrow; p(x_{t+1} \mid x_{\le t}).
+]
+
+That’s it. Every large language model, no matter how advanced, is doing this same mathematical operation over and over again.”
+

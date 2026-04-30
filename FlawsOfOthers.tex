@@ -311,7 +311,7 @@ spill-over risk and a practical framework for targeted intervention.
 %===============================================
 This section lays out the analytical and computational machinery that supports the paper's argument. We begin by establishing a mathematical floor on invalidation probability, proving that no finite-loss LLM can achieve zero error rate (Section~\ref{sec:invalidation-floor}). The inevitability of invalidations raises a question about the limits of  detection; we show that in practice detection of invalidations is easier that their avoidance, and we show the imppossibility of making universal  statements in this front (Section~\ref{sec:verification-advantage}).  We then categorize user-model interactions into three functional classes (critique, ideation, and product-oriented generation) and show why critique operations are computationally cheapest, residing near the peak of the model's output distribution (Section~\ref{sec:efficient-engagement}). 
 
-Building on these foundations, we formalize discoursive networks as a collection of structures $N=(A,S,P,I,C,B,U,G)$ whose agents exchange and validate statements under well-defined update rules (Section~\ref{sec:discursive}). We analyze three progressively richer belief dynamics (Section~\ref{sec:modeling}): first, a single-network model with binary truth states, proving convergence to a unique equilibrium determined by flip probabilities; second, an extended model incorporating spontaneous invalidation generation, showing how fabrication rates push systems into error-dominant regimes; and third, a dual-network model with cross-detection, deriving conditions under which external scrutiny reduces aggregate error below single-network baselines.
+Building on these foundations, we formalize discoursive networks as a collection of structures $N=(S,P,I,C,A,B,U,G)$ whose agents exchange and validate statements under well-defined update rules (Section~\ref{sec:discursive}). We analyze three progressively richer belief dynamics (Section~\ref{sec:modeling}): first, a single-network model with binary truth states, proving convergence to a unique equilibrium determined by flip probabilities; second, an extended model incorporating spontaneous invalidation generation, showing how fabrication rates push systems into error-dominant regimes; and third, a dual-network model with cross-detection, deriving conditions under which external scrutiny reduces aggregate error below single-network baselines.
 
 These theoretical results culminate in practical design principles: we derive the minimum number of cross-checking agents needed to achieve any target error tolerance (Section~\ref{sec:agent-requirements}) and present the Flaws-of-Others (FOO) algorithm that implements these detection mechanisms in software, complete with cryptographic integrity verification to prevent post-hoc tampering (Section~\ref{sec:foo-algorithm}). Together, these methods provide both the mathematical framework for understanding invalidation propagation and the computational tools for mitigating it in practice.
 
@@ -467,13 +467,13 @@ To systematically study the phenomenon of invalidation, we propose a formal mode
     \end{definition}
 
 \begin{definition}\label{def:discursive_network}
-    \textbf{Discursive Network.} A discursive network is a formal structure $N = (A, S, P, I, C, B, U, G)$ where:
+    \textbf{Discursive Network.} A discursive network is a formal structure $N = (S,P,I,C,A,B,U,G)$ where:
     \begin{itemize}
-        \item $A = \{a_1, a_2, \ldots, a_n\}$ is the set of actors participating in the discourse.
         \item $S = \{s_1, s_2, \ldots, s_m\}$ is the set of possible statements, where each statement can be either true or false.
         \item $P = \{P_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ represents the persuasion functions, where $P_{ij}(s_k)$ gives the likelihood that actor $a_j$ will adopt statement $s_k$ after receiving communication from actor $a_i$.
         \item $I = \{I_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ denotes invalidations, where $I_{ij}(s_k, s_l)$ signifies actor $a_i$ invalidating a statement $s_k$ held by actor $a_j$ using a contradictory statement $s_l$.
         \item $C = \{C_{ij} \mid i, j \in \{1, 2, \ldots, n\}\}$ represents the communications between actors, where $C_{ij}$ is the set of statements communicated from actor $a_i$ to actor $a_j$.
+        \item $A = \{a_1, a_2, \ldots, a_n\}$ is the set of actors participating in the discourse.
         \item $B = \{B_1, B_2, \ldots, B_n\}$ represents the belief sets of the actors, where $B_i \subseteq S$ denotes the set of statements believed to be true by actor $a_i$.
         \item $U = \{U_j \mid j \in \{1, 2, \ldots, n\}\}$ is the set of update rules that define how each actor's belief set $B_j$ is modified in response to communications and invalidations.
         \item $G = \{G_1, G_2, \ldots, G_n\}$ represents the goal functions of the actors, with $G_i: A \to 2^S$ specifying the set of statements actor $a_i$ seeks to convince other actors to believe.
@@ -488,7 +488,7 @@ To systematically study the phenomenon of invalidation, we propose a formal mode
 % \subsubsection{Communication Integrity in Discursive Networks}
 % \label{sec:communication-integrity}
 
-% In our discursive network formalism $N=(A,S,P,I,C,B,U,G)$, the 
+% In our discursive network formalism $N=(S,P,I,C,A,B,U,G)$, the 
 % communication component $C=\{C_{ij}\}$ represents message exchanges 
 % between actors. For the network dynamics to be analyzable and 
 % reproducible, these communications must be verifiable and tamper-evident.
@@ -553,11 +553,11 @@ The mapping of this model to Definition \ref{def:discursive_network} is provided
     \toprule
     \textbf{Element in $N$} & \textbf{Instantiation in single-network model} \\
     \midrule
-    $A$ & Unchanged actor set; proportions refer to $n=|A|$.\\
     $S=\{r,f\}$ & Binary, mutually exclusive statements (\emph{true} vs. \emph{false}).\\
     $P_{ij}$ & $p$ if $B_{j}=\{r\}$ and $B_{i}=\{f\}$; $q$ if $B_{j}=\{f\}$ and $B_{i}=\{r\}$.\\
     $I_{ij}$ & Contradiction if $B_{i}\neq B_{j}$.\\
     $C_{ij}$ & Message containing $B_{i}$.\\
+    $A$ & Unchanged actor set; proportions refer to $n=|A|$.\\
     $B_{i}$ & $\{r\}$ or $\{f\}$ for each actor.\\
     $U_{j}$ & Switches $B_{j}$ with the corresponding probability, otherwise leaves it unchanged.\\
     $G_{i}$ & Persuade others to adopt actor $a_{i}$'s current belief.\\
@@ -610,10 +610,10 @@ p\,\pi_{T}=q\,\pi_{F}=q\,(1-\pi_{T}),
 \]
 Thus the fixed point is unique.  
 The characteristic polynomial of $T$ is
-$\lambda^{2}-(2-p-q)\lambda+(1-p-q)=0$,
-whose roots are $\lambda_{1}=1$ and
-$\lambda_{2}=1-p-q$.
-Because $0<p+q<1$, we have $|\lambda_{2}|<1$; hence
+$l^{2}-(2-p-q)l+(1-p-q)=0$,
+whose roots are $l_{1}=1$ and
+$l_{2}=1-p-q$.
+Because $0<p+q<1$, we have $|l_{2}|<1$; hence
 $T^{t}\to\boldsymbol{\pi}^{*}\mathbf 1^{\mathsf T}$ as $t\to\infty$,
 so every trajectory converges to $\boldsymbol{\pi}^{*}$.
 \end{proof}
@@ -711,11 +711,11 @@ The mapping of this model to Definition \ref{def:discursive_network} is provided
         \toprule
         \textbf{Element in $N$} & \textbf{Instantiation in emergent-invalidation model} \\
         \midrule
-        $A$ & Fixed actor set; proportions refer to $n=\lvert A\rvert$. \\
         $S=\{r,f\}$ & Binary statements ($r$ = true, $f$ = false). \\
         $P_{ij}$ & Spontaneous flips: $p$ for $r \to f$ (appears in $Z(t)$), $q$ for $f \to r$ (appears in $W(t)$). \\ 
         $I_{ij}$ & Internal invalidation; realized as self-correction $\mathrm{Binomial}(F(t),q)$ when $i=j$.  (No cross-actor invalidation in the single-network setting.) \\
         $C_{ij}$ & Message from $a_i$ to $a_j$ containing $B_i$. \\
+        $A$ & Fixed actor set; proportions refer to $n=\lvert A\rvert$. \\
         $B_i$ & Current belief of actor $a_i$: $\{r\}$ or $\{f\}$. \\
         $U_j$ & Update rule applying the three hazards:\\ & \hspace{1em}$X(t)\sim\mathrm{Poisson}(\lambda T(t))$  (fabrications)\\ & \hspace{1em}$Z(t)\sim\mathrm{Binomial}(T(t),p)$  (truth \textrightarrow\ false)\\ & \hspace{1em}$W(t)\sim\mathrm{Binomial}(F(t),q)$  (false \textrightarrow\ true)\\
         $G_i$ & Goal: persuade all other actors to adopt $B_i$. \\
@@ -770,10 +770,10 @@ Because \(\pi_{F}=1-\pi_{T}\), the first line reduces to
 \)
 which yields the fixed point in the statement.  
 The characteristic polynomial of \(T_\lambda\) is
-\(\lambda^{2}-(2-p-\lambda-q)\lambda+(1-p-\lambda-q)=0\),
-with roots \(\lambda_{1}=1\) and
-\(\lambda_{2}=1-(p+\lambda+q)\).
-Since \(p+\lambda+q<1\), we have \(|\lambda_{2}|<1\); therefore
+\(l^{2}-(2-p-\lambda-q)l+(1-p-\lambda-q)=0\),
+with roots \(l_{1}=1\) and
+\(l_{2}=1-(p+\lambda+q)\).
+Since \(p+\lambda+q<1\), we have \(|l_{2}|<1\); therefore
 \(T_\lambda^{\,t}\to\boldsymbol{\pi}^{*}\mathbf 1^{\mathsf T}\) as
 \(t\to\infty\), so every trajectory converges to \(\boldsymbol{\pi}^{*}\).
 \end{proof}
@@ -863,11 +863,11 @@ The mapping of this model to Definition \ref{def:discursive_network} is provided
         \toprule
         \textbf{Element in $N_{1}\cup N_{2}$} & \textbf{Instantiation in the model} \\
         \midrule
-        $A_k$ & Two disjoint actor sets $A_1,A_2$; proportions refer to $n_k=\lvert A_k\rvert$. \\[2pt]
         $S=\{r,f\}$ & Binary statements shared by both networks ($r$ = true, $f$ = false). \\[2pt]
         $P_{ij}$ & \textbf{Persuasion function}.  Within each network $N_k$ it reduces to constant flip probabilities:   \hspace{1em}$p_k$ for $r \to f$ (used in $Z_k(t)$),   \hspace{1em}$q_k$ for $f \to r$ (used in $W_k(t)$).   Across networks, persuasion acts only via $I_{ij}$ with success probability $d_{jk}$. \\[6pt]
         $I_{ij}$ & \textbf{Cross-network invalidation}: if $B_{ij}=\{f\}$ and the receiver belongs to the other network, the statement is detected and flipped with probability $d_{jk}$ (realized through the random variable $Y_{jk}(t)$). \\[4pt]
         $C_{ij}$ & Message sent from $a_i$ to $a_j$ carrying $B_{ij}$.  Communication enables both persuasion and detection. \\[2pt]
+        $A_k$ & Two disjoint actor sets $A_1,A_2$; proportions refer to $n_k=\lvert A_k\rvert$. \\[2pt]
         $B_{ij}$ & Belief of actor $a_{ij}\in A_k$: $\{r\}$ or $\{f\}$. \\[2pt]
         $U_j$ & \textbf{Update rule} for actor $a_j$ that applies in the following  order    (i) fabrication $X_k(t)\sim\mathrm{Poisson}(\lambda_k T_k(t))$,   (ii) internal flips $Z_k(t),W_k(t)$ using $p_k,q_k$,   (iii) cross-network detection $Y_{jk}(t)$ using $d_{jk}$.  The parameter $\lambda_k$ therefore lives inside $U_j$. \\[2pt]
         $G_{ij}$ & Goal: persuade every other actor (within and across networks) to adopt $B_{ij}$. \\[2pt]
@@ -1825,7 +1825,7 @@ The reliability of discursive networks depends critically on the integrity of re
 We address this challenge through a blockchain-based integrity system that creates tamper-evident records of all agent interactions. Each message exchange in the discursive network generates a cryptographic block containing the agent identity, message content, timestamp, and hash-linked reference to the previous interaction. The system employs SHA-256 hashing with a global salt shared across all agents to ensure consistency while preventing individual agents from being identified through hash analysis alone.
 
 \begin{definition}[Conversation Blockchain]
-For a discursive network defined by the structure $N = (A, S, P, I, C, B, U, G)$, the conversation blockchain $\mathcal{B}$ is a sequence of cryptographically linked blocks $\{b_0, b_1, \ldots, b_n\}$ that creates tamper-evident records of all agent interactions, where $\sigma$ is a global salt and $||$ denotes concatenation.
+For a discursive network defined by the structure $N = (S,P,I,C,A,B,U,G)$, the conversation blockchain $\mathcal{B}$ is a sequence of cryptographically linked blocks $\{b_0, b_1, \ldots, b_n\}$ that creates tamper-evident records of all agent interactions, where $\sigma$ is a global salt and $||$ denotes concatenation.
 \end{definition}
 
 \begin{algorithm}[htb]

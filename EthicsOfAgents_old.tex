@@ -1,0 +1,403 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage[numbers]{natbib}
+\usepackage{microtype}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+\newcommand{\DAIR}{DAIR$^3$}
+
+\title{Ethics of Agents:\\Responsible Use of LLM-Based AI Agents in Biomedical Data Science\\(\DAIR{} Training Bootcamp; 60-minute session)}
+\author{Prepared for the \DAIR{} Bootcamp Faculty \\
+Session title: \emph{Ethics of Agents}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+LLM-based AI agents are increasingly used in biomedical data science to draft text, write code, manage workflows, and assist decision-making. Unlike a single chatbot response, an \emph{agentic} workflow can plan, call tools, persist memory, and interact with people and systems---forming a \emph{discursive network} in which statements circulate, mutate, and acquire authority. This session provides an ethics-forward framework for agent use anchored in (i) \emph{invalidation}---a broader concept than ``hallucination'' that includes factual, logical, normative, and structural breaches---and (ii) multi-agent critique designs (e.g., ``flaws-of-others'' loops) that can reduce error while introducing new ethical tradeoffs. We connect core Responsible Conduct of Research (RCR) duties (accountability, transparency, reproducibility, privacy, fairness) to concrete design patterns: scope control, provenance logging, confidentiality safeguards, verification budgets, and disclosure norms. A brief assessment instrument and a case-based rubric are included.
+\end{abstract}
+
+\textbf{Keywords:} AI agents; research integrity; invalidation; provenance; confidentiality; authorship; bias; sustainability; biomedical data science
+
+\section{Context and Rationale (Why ``Ethics of Agents''?)}
+Biomedical data science increasingly depends on computational pipelines that must remain rigorous, reproducible, and accountable. LLM-based agents can reduce administrative burden and accelerate drafting, coding, and review tasks. However, \emph{agentic autonomy} (planning, tool-use, memory, delegation) expands the ethical surface area compared with a single-turn model interaction.
+
+This session is positioned to complement adjacent \DAIR{} ethics and rigor modules by focusing on a distinct question:
+\begin{quote}
+\emph{When a workflow contains semi-autonomous language agents, what new obligations arise for researchers to ensure truthfulness, accountability, confidentiality, and fairness?}
+\end{quote}
+
+We adopt a discursive-network lens: researchers and agents become nodes in a communication system where statements can propagate and stabilize even when incorrect \citep{gutierrez2025}. The ethical aim is not ``never use agents,'' but to use them with \emph{governance-by-design}: controls, logs, review loops, and disclosure practices consistent with RCR and biomedical norms.
+
+\section{What Is an AI Agent (Operational Definition)}
+For this bootcamp, an \textbf{AI agent} is an LLM-centered system that can:
+\begin{enumerate}[label=\alph*)]
+\item interpret goals and decompose tasks (planning),
+\item take actions via tools (APIs, code execution, retrieval, file edits),
+\item maintain state across steps (memory, scratchpads, external stores),
+\item interact with humans and/or other agents (multi-agent workflows).
+\end{enumerate}
+
+Agentic patterns are widely studied in interactive settings where multiple agents can exhibit emergent behaviors \citep{park2023}. In practice, agents are used for literature triage, data wrangling, statistical scripting, manuscript drafting, and even structured review tasks. This makes ethics \emph{workflow-level}, not merely \emph{model-output-level}.
+
+\section{Foundation Concept 1: ``Invalidation'' Instead of ``Hallucination''}
+In the discursive-network framework, \textbf{invalidation} denotes \emph{any breach of constraints} (facts, logic, norms, formats) \citep{gutierrez2025}. This matters ethically because agents can produce outputs that are persuasive, reusable, and easy to circulate even when invalid.
+
+A practical taxonomy (examples):
+\begin{itemize}
+\item \textbf{Factual invalidation:} incorrect biomedical claims, fabricated citations \citep{ji2023survey}.
+\item \textbf{Logical invalidation:} internally inconsistent reasoning or statistical non sequiturs.
+\item \textbf{Normative invalidation:} privacy breaches (PHI exposure), harmful bias, policy violations \citep{bender2021, weidinger2021}.
+\item \textbf{Structural invalidation:} broken schemas, unusable code, malformed outputs (common in automation settings).
+\end{itemize}
+
+\subsection{Ethical implication: ``You cannot outsource responsibility''}
+Even if invalidation is statistically inevitable in generation \citep{gutierrez2025}, the ethical standard in biomedical research remains: humans are accountable for claims, analyses, and disclosures. This aligns with general risk frameworks that treat AI as socio-technical: harms emerge from system design, deployment, and human use, not only from model weights \citep{nist_rmf}.
+
+\section{Foundation Concept 2: Multi-Agent Critique Can Reduce Error (But Adds Tradeoffs)}
+A key design insight is that \emph{verification can be easier than generation} for LLMs in many settings, motivating structured critique loops \citep{gutierrez2025}. A prominent pattern is ``flaws-of-others'' cross-critique, where multiple agents review each other's outputs and a harmonizer merges findings \citep{gutierrez2025}.
+
+\subsection{Ethical implication: reliability gains vs.\ new harms}
+Cross-agent review can reduce invalidation, but it can also:
+\begin{itemize}
+\item increase \textbf{privacy leakage risk} by sharing more text with more systems,
+\item raise \textbf{energy/compute costs} (and equity concerns) as agent counts grow \citep{strubell2019},
+\item reduce \textbf{epistemic diversity} by converging toward bland consensus \citep{bender2021},
+\item create \textbf{attribution ambiguity} (who is responsible for which claim?).
+\end{itemize}
+
+\section{Ethical Risk Map for Agentic Workflows (What to Watch For)}
+This section is the core content for the 60-minute session: a workflow-oriented ethics map with mitigations.
+
+\subsection{Epistemic Risk: Invalidation Propagation and Overtrust}
+LLM text can be difficult to distinguish from expert-authored prose, and incorrect statements can propagate through documents, code, and reports \citep{ji2023survey}. In biomedical contexts, this can affect patient-facing materials, literature reviews, or analytic conclusions.
+
+\textbf{Mitigations (minimum set):}
+\begin{itemize}
+\item Require \textbf{traceable sources} for factual biomedical claims (links/DOIs; no ``phantom citations'').
+\item Use \textbf{retrieval-augmented verification} or independent checks for key assertions.
+\item Establish a \textbf{verification budget}: which outputs must be verified, by whom, and how.
+\end{itemize}
+
+\subsection{Accountability, Authorship, and ``Epithesis''}
+The discursive-network manuscript introduces \textbf{scientific epithesis}: claiming authorship/credit after only superficial (or no) intellectual engagement with agent-produced content \citep{gutierrez2025}. This intersects with longstanding concerns about honorary/gift authorship \citep{marusic2011}.
+
+Current publication-ethics guidance broadly agrees that AI tools \emph{cannot} be authors because they cannot take responsibility or accountability \citep{cope_ai, icmje_authorship, wame2023}.
+
+\textbf{Mitigations:}
+\begin{itemize}
+\item Apply ICMJE authorship criteria to humans; list AI tools only in methods/acknowledgments as appropriate \citep{icmje_authorship, icmje_ai}.
+\item Use a \textbf{contribution log} (what the human did vs.\ what agents did).
+\item Require a \textbf{human accountability statement} for agent-assisted work (Appendix~\ref{app:disclosure}).
+\end{itemize}
+
+\subsection{Provenance, Auditability, and Reproducibility}
+Agentic workflows often involve iterative revisions across multiple models and tools. Without logs, it becomes difficult to reproduce a result or investigate an error.
+
+\textbf{Mitigations:}
+\begin{itemize}
+\item Maintain \textbf{tamper-evident records} (at minimum: time-stamped logs of prompts, outputs, tools called, model versions) \citep{gutierrez2025}.
+\item Store \textbf{exact prompts/configs} alongside code, seeds, and environment metadata (aligns with reproducible workflows).
+\item Define \textbf{handoff points} where a human must review before external release.
+\end{itemize}
+
+\subsection{Confidentiality and Privacy (PHI, Peer Review, Sensitive Data)}
+Agent systems can leak sensitive content through prompts, memory stores, or tool calls. Membership inference research shows models can leak information about training data presence \citep{shokri2017}. Confidentiality obligations are explicit in grant peer review: NIH prohibits peer reviewers from using generative AI to analyze and write critiques \citep{nih_ai_peerreview}; NSF likewise warns that uploading proposal content to non-approved generative AI tools breaches confidentiality \citep{nsf_ai_notice}.
+
+\textbf{Mitigations:}
+\begin{itemize}
+\item Do not upload PHI, unpublished proposals, or confidential peer-review text to unapproved tools.
+\item Use \textbf{data minimization}: redact identifiers; summarize rather than paste raw records.
+\item Prefer \textbf{institutionally managed} models/enclaves for sensitive workflows.
+\end{itemize}
+
+\subsection{Bias, Fairness, and Epistemic Diversity}
+LLMs can replicate and amplify social biases present in training corpora \citep{bender2021, weidinger2021}. Multi-agent consensus can inadvertently suppress minority-but-correct scientific hypotheses if all agents share similar training biases.
+
+\textbf{Mitigations:}
+\begin{itemize}
+\item Include a \textbf{diversity-of-critique} step: one agent (or human) tasked to argue plausible alternatives.
+\item Evaluate outputs for \textbf{group harm} and biased framing when dealing with populations and disparities.
+\item Use established risk frameworks and governance standards for trustworthiness \citep{nist_rmf, unesco_ai, oecd_ai}.
+\end{itemize}
+
+\subsection{Security and Misuse (Prompt Injection, Adversarial Manipulation)}
+Agents that browse, retrieve, or execute tools are exposed to prompt injection and adversarial text. Research shows NLP systems can be steered by universal triggers \citep{wallace2019}. Tool-using agents also create new attack paths (e.g., malicious instructions embedded in retrieved content).
+
+\textbf{Mitigations:}
+\begin{itemize}
+\item Sandbox tools; apply least-privilege permissions.
+\item Separate \textbf{retrieval} from \textbf{execution} (humans approve actions).
+\item Maintain allowlists for external resources and implement content filtering for retrieved text.
+\end{itemize}
+
+\subsection{Sustainability and Equity (Energy/Compute Costs)}
+Large-scale agent critique can scale quadratically in the number of agents if every agent critiques every other agent; compute costs can deepen inequities between well-funded and resource-limited groups \citep{strubell2019}. This is an ethics issue when ``best practices'' become unaffordable.
+
+\textbf{Mitigations:}
+\begin{itemize}
+\item Right-size verification: use a small number of specialized critics for high-stakes sections.
+\item Prefer cheaper checks first (schema validators, unit tests, retrieval) before adding more agents.
+\item Track compute usage and justify multi-agent overhead for high-risk outputs.
+\end{itemize}
+
+\section{60-Minute Teaching Plan (Instructor-Ready)}
+\begin{center}
+\begin{tabular}{@{}p{0.12\linewidth}p{0.83\linewidth}@{}}
+\toprule
+\textbf{Time} & \textbf{Activity and Key Points} \\
+\midrule
+0--5 & \textbf{Set the frame:} Why agents are different from chat. Define agentic workflow + accountability expectations in RCR. \\
+5--15 & \textbf{Concepts:} Discursive networks; invalidation vs.\ hallucination; why invalidation propagates (circulation + authority). \\
+15--30 & \textbf{Ethics map:} (i) epistemic risk, (ii) authorship/epithesis, (iii) provenance, (iv) privacy/confidentiality, (v) bias, (vi) security, (vii) sustainability. \\
+30--42 & \textbf{Mini case discussion (small groups):} Identify risks + mitigations (Case in Section~\ref{sec:case}). \\
+42--52 & \textbf{Design patterns:} verification budgets; ``FOO-lite'' cross-critique; logging; redaction; least privilege; disclosure statements. \\
+52--60 & \textbf{Assessment + wrap:} short quiz + one-sentence disclosure; collect commitments for responsible agent use. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Student Learning Outcomes (SLOs)}
+By the end of this 60-minute session, learners will be able to:
+\begin{enumerate}[label=\textbf{SLO\arabic*.}, leftmargin=*]
+\item \textbf{Define} an AI agent in terms of planning, tool use, memory, and multi-agent interaction, and explain why this expands ethical risk.
+\item \textbf{Explain} invalidation (beyond ``hallucination'') and identify at least three invalidation types relevant to biomedical data science.
+\item \textbf{Apply} an ethics checklist to an agentic research workflow and identify at least four concrete risks (accuracy, authorship, privacy, bias, security, sustainability).
+\item \textbf{Evaluate} when multi-agent critique can improve reliability and when it may be inappropriate due to confidentiality, compute burden, or homogenization.
+\item \textbf{Draft} a compliant disclosure/accountability statement for agent use aligned with publication-ethics norms (ICMJE/COPE/WAME).
+\end{enumerate}
+
+\section{Assessment Instrument (10 minutes total)}
+\subsection{Part A: Knowledge Check (8 points; 6 minutes)}
+Circle the best answer (unless marked ``Select all that apply'').
+
+\begin{enumerate}[leftmargin=*]
+\item (1 pt) Which feature most distinguishes an \emph{agent} from a single-turn chatbot? \\
+A. Larger parameter count \quad
+B. Ability to plan and call tools \quad
+C. Better grammar \quad
+D. Faster typing
+
+\item (1 pt) ``Invalidation'' includes which of the following? (Select all that apply)\\
+A. Fabricated citations \quad
+B. Broken JSON schema in a pipeline output \quad
+C. A logically inconsistent statistical conclusion \quad
+D. All of the above
+
+\item (1 pt) According to COPE/ICMJE/WAME-aligned guidance, AI tools should be listed as authors: \\
+A. Always \quad
+B. Only if they wrote $>$50\% of text \quad
+C. Never \quad
+D. Only in methods papers
+
+\item (1 pt) True or False: If an LLM drafts a method section, adding your name without careful review is ethically acceptable because you ``own'' the project.
+
+\item (2 pts) You are serving on a federal grant review panel. Which action is ethically and policy risky? \\
+A. Taking handwritten notes \quad
+B. Uploading proposal text into a public LLM to draft critiques \quad
+C. Discussing scoring criteria in the panel meeting \quad
+D. Checking formatting rules in the solicitation
+
+\item (2 pts) A multi-agent ``everyone critiques everyone'' workflow most directly raises which cost? \\
+A. Quadratic compute/energy growth \quad
+B. Reduced need for disclosure \quad
+C. Guaranteed absence of bias \quad
+D. Elimination of confidentiality concerns
+\end{enumerate}
+
+\subsection{Part B: Short Response (2 points; 4 minutes)}
+\begin{enumerate}[leftmargin=*, resume]
+\item (1 pt) Write a one-sentence disclosure describing how you used AI tools in a manuscript or analysis.
+\item (1 pt) Name \textbf{one} safeguard you would add before allowing an agent to run code on biomedical data.
+\end{enumerate}
+
+\subsection{Answer Key (Instructor)}
+\begin{itemize}
+\item Q1: B
+\item Q2: D
+\item Q3: C
+\item Q4: False
+\item Q5: B (see NIH/NSF confidentiality guidance)
+\item Q6: A
+\item Short responses: award credit if disclosure is specific about tool + purpose; safeguard examples include sandboxing, least privilege, human approval gates, redaction, unit tests, audit logs.
+\end{itemize}
+
+\section{Case-Based Evaluation (Optional Group Scoring)}
+\label{sec:case}
+\textbf{Case (use in minutes 30--42):} Your team is analyzing a biomedical cohort dataset and wants to use an agentic pipeline to:
+(i) generate a data dictionary and cleaning script, (ii) draft a methods section, (iii) propose models and generate code, and (iv) summarize results for a manuscript.
+
+\textbf{Task:} Identify risks and mitigations. Produce a 5-bullet ``agent governance plan''.
+
+\subsection{Rubric (10 points)}
+\begin{center}
+\begin{tabular}{@{}p{0.52\linewidth}p{0.36\linewidth}@{}}
+\toprule
+\textbf{Criterion} & \textbf{Points} \\
+\midrule
+Identifies epistemic/invalidation risks \& verification plan & 0--2 \\
+Identifies confidentiality/privacy risks (PHI, sensitive text) \& mitigations & 0--2 \\
+Addresses authorship/accountability (avoids epithesis; disclosure) & 0--2 \\
+Addresses bias/security (prompt injection, adversarial issues; least privilege) & 0--2 \\
+Addresses sustainability/equity (right-sizing agents; compute budget) & 0--2 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\appendix
+\section{Template Disclosure and Accountability Statement}
+\label{app:disclosure}
+\noindent\textbf{Disclosure template (adapt as needed):}
+\begin{quote}
+We used AI-assisted tools (name/version) for (specific tasks: e.g., drafting, language editing, code suggestions, summarization). All outputs were reviewed and verified by the authors, who take full responsibility for the accuracy, integrity, and originality of the work and for compliance with confidentiality and data governance requirements.
+\end{quote}
+
+\section{Practical ``Ethics of Agents'' Checklist (One Page)}
+Before using agents in a biomedical workflow, confirm:
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Scope:} What decisions/actions are permitted? What requires human approval?
+\item \textbf{Data:} Are you exposing PHI, unpublished proposals, or confidential peer-review material?
+\item \textbf{Provenance:} Are prompts, outputs, tool calls, and model versions logged?
+\item \textbf{Verification:} Which claims/code must be independently verified (and how)?
+\item \textbf{Authorship:} Who meets authorship criteria? How will AI use be disclosed?
+\item \textbf{Bias \& harms:} Are outputs evaluated for biased framing and downstream harm?
+\item \textbf{Security:} Are tools sandboxed and permissions minimized?
+\item \textbf{Sustainability:} Is the verification overhead justified for the risk level?
+\end{enumerate}
+
+\section*{References}
+\begin{thebibliography}{99}
+
+\bibitem[Gutierrez(2025)]{gutierrez2025}
+J.~B.~Guti\'errez.
+\newblock \emph{A Mathematical Theory of Discursive Networks}.
+\newblock arXiv:2507.06565, 2025.
+\newblock DOI: 10.48550/arXiv.2507.06565. URL: \url{https://arxiv.org/abs/2507.06565}
+
+\bibitem[Ji et~al.(2023)]{ji2023survey}
+Z.~Ji, N.~Lee, R.~Frieske, et~al.
+\newblock Survey of hallucination in natural language generation.
+\newblock \emph{ACM Computing Surveys}, 55(12), 2023.
+\newblock DOI: 10.1145/3571730. URL: \url{https://dl.acm.org/doi/10.1145/3571730}
+
+\bibitem[NIST(2023)]{nist_rmf}
+National Institute of Standards and Technology (NIST).
+\newblock \emph{Artificial Intelligence Risk Management Framework (AI RMF 1.0)}.
+\newblock NIST AI 100-1, 2023.
+\newblock URL: \url{https://nvlpubs.nist.gov/nistpubs/ai/nist.ai.100-1.pdf}
+
+\bibitem[NIST(2024)]{nist_genai_profile}
+National Institute of Standards and Technology (NIST).
+\newblock \emph{A Profile for the AI Risk Management Framework: Generative AI}.
+\newblock NIST AI 600-1, 2024.
+\newblock URL: \url{https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf}
+
+\bibitem[UNESCO(2021)]{unesco_ai}
+UNESCO.
+\newblock \emph{Recommendation on the Ethics of Artificial Intelligence}.
+\newblock Adopted 2021.
+\newblock URL: \url{https://www.unesco.org/en/artificial-intelligence/recommendation-ethics}
+
+\bibitem[OECD(2019; rev.\ 2023)]{oecd_ai}
+OECD.
+\newblock \emph{Recommendation of the Council on Artificial Intelligence} (OECD Legal Instrument 0449).
+\newblock Adopted 2019; revised definition 2023.
+\newblock URL: \url{https://legalinstruments.oecd.org/en/instruments/oecd-legal-0449}
+
+\bibitem[Bender et~al.(2021)]{bender2021}
+E.~M.~Bender, T.~Gebru, A.~McMillan-Major, and S.~Shmitchell.
+\newblock On the dangers of stochastic parrots: Can language models be too big?
+\newblock In \emph{FAccT '21}, 2021.
+\newblock DOI: 10.1145/3442188.3445922. URL: \url{https://dl.acm.org/doi/10.1145/3442188.3445922}
+
+\bibitem[Weidinger et~al.(2021)]{weidinger2021}
+L.~Weidinger et~al.
+\newblock Ethical and social risks of harm from language models.
+\newblock arXiv:2112.04359, 2021.
+\newblock DOI: 10.48550/arXiv.2112.04359. URL: \url{https://arxiv.org/abs/2112.04359}
+
+\bibitem[COPE(2023)]{cope_ai}
+Committee on Publication Ethics (COPE).
+\newblock \emph{Authorship and AI tools} (COPE position statement).
+\newblock 2023.
+\newblock URL: \url{https://publicationethics.org/guidance/cope-position/authorship-and-ai-tools}
+
+\bibitem[ICMJE(Accessed 2026)]{icmje_authorship}
+International Committee of Medical Journal Editors (ICMJE).
+\newblock \emph{Defining the Role of Authors and Contributors}.
+\newblock URL: \url{https://www.icmje.org/recommendations/browse/roles-and-responsibilities/defining-the-role-of-authors-and-contributors.html}
+
+\bibitem[ICMJE(Accessed 2026)]{icmje_ai}
+International Committee of Medical Journal Editors (ICMJE).
+\newblock \emph{Use of Artificial Intelligence in Publishing}.
+\newblock URL: \url{https://www.icmje.org/recommendations/browse/artificial-intelligence/}
+
+\bibitem[WAME(2023)]{wame2023}
+World Association of Medical Editors (WAME).
+\newblock \emph{Chatbots, Generative AI, and Scholarly Manuscripts}.
+\newblock 2023.
+\newblock URL: \url{https://wame.org/page3.php?id=106}
+
+\bibitem[NIH(2023)]{nih_ai_peerreview}
+National Institutes of Health (NIH).
+\newblock \emph{NOT-OD-23-149: The Use of Generative Artificial Intelligence Technologies is Prohibited for the NIH Peer Review Process}.
+\newblock 2023.
+\newblock URL: \url{https://grants.nih.gov/grants/guide/notice-files/NOT-OD-23-149.html}
+
+\bibitem[NSF(2023)]{nsf_ai_notice}
+National Science Foundation (NSF).
+\newblock \emph{Notice to the Research Community: Use of Generative Artificial Intelligence Technologies in the Merit Review Process}.
+\newblock 2023.
+\newblock URL: \url{https://www.nsf.gov/news/notice-to-the-research-community-on-ai}
+
+\bibitem[Maru\v{s}i\'c et~al.(2011)]{marusic2011}
+A.~Maru\v{s}i\'c, L.~Bo\v{s}njak, and A.~Jeron\v{c}i\'c.
+\newblock A systematic review of research on the meaning, ethics and practices of authorship across scholarly disciplines.
+\newblock \emph{PLOS ONE}, 6(9):e23477, 2011.
+\newblock DOI: 10.1371/journal.pone.0023477. URL: \url{https://doi.org/10.1371/journal.pone.0023477}
+
+\bibitem[Shokri et~al.(2017)]{shokri2017}
+R.~Shokri, M.~Stronati, C.~Song, and V.~Shmatikov.
+\newblock Membership inference attacks against machine learning models.
+\newblock In \emph{IEEE Symposium on Security and Privacy}, 2017.
+\newblock DOI: 10.1109/SP.2017.41. URL: \url{https://doi.org/10.1109/SP.2017.41}
+
+\bibitem[Wallace et~al.(2019)]{wallace2019}
+E.~Wallace, S.~Feng, N.~Kandpal, M.~Gardner, and S.~Singh.
+\newblock Universal adversarial triggers for attacking and analyzing NLP.
+\newblock In \emph{EMNLP 2019}, 2019.
+\newblock DOI: 10.18653/v1/D19-1221. URL: \url{https://aclanthology.org/D19-1221/}
+
+\bibitem[Strubell et~al.(2019)]{strubell2019}
+E.~Strubell, A.~Ganesh, and A.~McCallum.
+\newblock Energy and policy considerations for deep learning in NLP.
+\newblock In \emph{ACL 2019}, 2019.
+\newblock DOI: 10.18653/v1/P19-1355. URL: \url{https://aclanthology.org/P19-1355/}
+
+\bibitem[Park et~al.(2023)]{park2023}
+J.~S.~Park, J.~C.~O'Brien, C.~J.~Cai, M.~Ringel~Morris, P.~Liang, and M.~S.~Bernstein.
+\newblock Generative agents: Interactive simulacra of human behavior.
+\newblock In \emph{CHI '23}, 2023.
+\newblock DOI: 10.1145/3586183.3606763. URL: \url{https://dl.acm.org/doi/10.1145/3586183.3606763}
+
+\bibitem[European Union(2024)]{eu_aiact}
+European Union.
+\newblock \emph{Regulation (EU) 2024/1689 (Artificial Intelligence Act)}.
+\newblock Official Journal.
+\newblock URL: \url{https://eur-lex.europa.eu/eli/reg/2024/1689/oj}
+
+\end{thebibliography}
+
+\end{document}
