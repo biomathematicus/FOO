@@ -10,6 +10,10 @@
 \usepackage{xcolor}           % extended colour names
 \usepackage{tipa}
 
+\usepackage{draftwatermark}
+\SetWatermarkText{DRAFT - DO NOT DISTRIBUTE}
+\SetWatermarkScale{2}
+
 % Palette A  -------------------------------------------------
 \definecolor{LinkBlue}{RGB}{0,114,178}   % deep blue
 \definecolor{CiteOrange}{RGB}{213,94,0}  % vermilion / orange
@@ -58,7 +62,7 @@
 
 \title{A Mathematical Theory of Discursive Networks}
 \author{
-    Juan B. Gutiérrez\footnote{\href{mailto:juan.gutierrez3@utsa.edu}{juan.gutierrez3@utsa.edu} Department of Mathematics, University of Texas at San Antonio.}  \phantom{ } 
+    Juan B. Gutiérrez\footnote{\copyright 2026 Juan B. Gutiérrez. \href{mailto:juan.gutierrez3@utsa.edu}{juan.gutierrez3@utsa.edu} Department of Mathematics, University of Texas at San Antonio.}  \phantom{ } 
     % 
     %nd 
     %
@@ -309,153 +313,317 @@ spill-over risk and a practical framework for targeted intervention.
 %===============================================
 \section{Methods}
 %===============================================
-This section lays out the analytical and computational machinery that supports the paper's argument. We begin by establishing a mathematical floor on invalidation probability, proving that no finite-loss LLM can achieve zero error rate (Section~\ref{sec:invalidation-floor}). The inevitability of invalidations raises a question about the limits of  detection; we show that in practice detection of invalidations is easier that their avoidance, and we show the imppossibility of making universal  statements in this front (Section~\ref{sec:verification-advantage}).  We then categorize user-model interactions into three functional classes (critique, ideation, and product-oriented generation) and show why critique operations are computationally cheapest, residing near the peak of the model's output distribution (Section~\ref{sec:efficient-engagement}). 
+This section lays out the analytical and computational machinery that supports
+our theory of discursive networks.  We begin with a distribution-relative lower
+bound on invalidation probability: if a reference distribution assigns positive
+mass to invalid outputs and a model remains at finite Kullback--Leibler
+divergence from that reference, then the model must assign positive probability
+to that invalid set.  This bound is a support-and-divergence statement.  It does
+not preclude deployment layers---retrieval, constrained decoding, rejection
+sampling, formal verification, or human review---from changing the delivered
+distribution.
 
-Building on these foundations, we formalize discoursive networks as a collection of structures $N=(S,P,I,C,A,B,U,G)$ whose agents exchange and validate statements under well-defined update rules (Section~\ref{sec:discursive}). We analyze three progressively richer belief dynamics (Section~\ref{sec:modeling}): first, a single-network model with binary truth states, proving convergence to a unique equilibrium determined by flip probabilities; second, an extended model incorporating spontaneous invalidation generation, showing how fabrication rates push systems into error-dominant regimes; and third, a dual-network model with cross-detection, deriving conditions under which external scrutiny reduces aggregate error below single-network baselines.
+The lower bound motivates verification layers, but verification advantage is not
+a universal entropy theorem.  We therefore model verification as a noisy channel
+with measurable sensitivity, false-positive rate, repair probability,
+dependence, and common-mode blind spots.  Under this model, discursive networks
+reduce delivered invalidity when critics detect a nonzero fraction of
+non-common-mode errors and flagged errors are successfully repaired or rejected.
+They cannot overcome shared blind spots merely by adding more replicas of the
+same critic family.
 
-These theoretical results culminate in practical design principles: we derive the minimum number of cross-checking agents needed to achieve any target error tolerance (Section~\ref{sec:agent-requirements}) and present the Flaws-of-Others (FOO) algorithm that implements these detection mechanisms in software, complete with cryptographic integrity verification to prevent post-hoc tampering (Section~\ref{sec:foo-algorithm}). Together, these methods provide both the mathematical framework for understanding invalidation propagation and the computational tools for mitigating it in practice.
+The remainder of the section builds the network model.  We formalize discursive
+networks as structures $N=(S,P,I,C,A,B,U,G)$ whose agents exchange and validate
+statements under well-defined update rules (Section~\ref{sec:discursive}).  We
+then analyze two-state belief dynamics under a single fixed-population framework
+(Section~\ref{sec:modeling}), using two effective parameters: $a$ for
+truth-to-false pressure and $b$ for false-to-true correction.  The familiar
+parameters $p,q,\lambda,d$ enter as special cases of $a$ and $b$.  We distinguish
+exact discrete-time Bernoulli detection from continuous-time additive hazards,
+because the minimum-agent formula differs in the two regimes.  Finally, the
+Flaws-of-Others (FOO) algorithm implements conditional cross-agent verification
+and records the interaction history through a tamper-evident signed hash-linked
+log.
+
 
 %------------------------------------------------
-\subsection{Floor on invalidation probability} \label{sec:invalidation-floor}
+\subsection{A distribution-relative floor on invalidation probability}
+\label{sec:invalidation-floor}
 %------------------------------------------------
-This subsection proves that a strictly positive invalidation probability is unavoidable for any LLM whose cross-entropy loss on its training distribution remains finite.
 
-A discursive network has a particular standard, e.g. factual accuracy, logical coherence, a set of safety rules, etc. Every sequence that meets this standard is called ``valid." Whenever a sequence breaks the standard, we have an ``invalidation." In symbols, the indicator $C(x)=1$ announces that sequence $x$ is valid, and the collection $S=\{x:C(x)=0\}$ captures every possible invalidation.
-
-The training corpus itself, represented by a probability distribution $Q$, might be imperfect; a fraction $q=Q(S)$ of its mass lies inside $S$. This fraction $q$ measures how much invalidating content appears in the training data, e.g. factual errors in bibliographic sources, biased statements in news sources, outdated information in historical documents, logical contradictions in discussion forums, etc.
-
-After training the language model on this corpus (including pre-training via next-token prediction, instruction tuning, and safety fine-tuning), we obtain a model whose learned distribution is $P_{\theta}$. The central question is how much probability this trained model still places on $S$, i.e. what chance it retains of producing an invalidation despite all the training improvements applied.
-
-Empirical studies provide sobering context: medical-domain evaluations report factual errors in the 15--30\,\% range \cite{thirunavukarasu2023large,sallam2023chatgpt}, while adversarial assessments find 3--5\,\% harmful outputs even after safety training \cite{zou2023universal,chao2023jailbreaking}. These persistent rates reflect structural limitations that no training regime can fully overcome.
-
-Given $\mathrm{KL}(Q \parallel P_{\theta})$, the  Kullback-Leibler divergence from the reference distribution $Q$ to the model distribution $P_{\theta}$, we can ennounce the following lemma.   
-
-\begin{lemma}[Invalidation floor]\label{lem:invalidation-floor}
-If $P_{\theta} \ll Q$ and $\mathrm{KL}(Q \parallel P_{\theta}) < \infty$, then
+Let $(\Omega,\mathcal F)$ be the measurable space of finite text outputs,
+including an end-of-sequence token.  A discursive standard is represented by a
+measurable validity predicate
 \[
-P_{\theta}(S) \geq q \exp\bigl(-\mathrm{KL}(Q \parallel P_{\theta})/q\bigr).
+    C:\Omega\to\{0,1\},
 \]
+where $C(x)=1$ means that $x$ satisfies the relevant standard and $C(x)=0$ means
+that $x$ is invalid.  The invalid set is
+\[
+    S=\{x\in\Omega:C(x)=0\}.
+\]
+Let $Q$ denote a reference distribution, such as the distribution induced by a
+training corpus, task data, or evaluation environment, and let $P_\theta$ denote
+the model distribution being evaluated.  To avoid collision with the dynamical
+self-repair probability later denoted by $q$, write
+\[
+    q_{\mathrm{corp}}=Q(S),\qquad
+    p_\theta=P_\theta(S),\qquad
+    D=D_{\mathrm{KL}}(Q|P_\theta).
+\]
+The event $S$ is a coarse-graining of the full sequence space.  Applying the
+data-processing inequality for KL divergence to the binary map
+$x\mapsto\mathbf 1_{\{x\in S\}}$ gives the appropriate lower bound
+\parencite{cover2006elements}.
+
+\begin{lemma}[Event lower bound from relative entropy]
+\label{lem:invalidation-floor}
+Assume $q_{\mathrm{corp}}=Q(S)>0$ and
+$D_{\mathrm{KL}}(Q|P_\theta)\le D<\infty$.  Let
+\[
+ d_{\mathrm{Bern}}(q|p)
+ =q\log\frac{q}{p}+(1-q)\log\frac{1-q}{1-p}
+\]
+denote binary KL divergence, with natural logarithms.  Then
+\[
+ d_{\mathrm{Bern}}\bigl(q_{\mathrm{corp}}|P_\theta(S)\bigr)\le D.
+\]
+Consequently $P_\theta(S)>0$.  More sharply, if
+$\beta(q_{\mathrm{corp}},D)\in(0,q_{\mathrm{corp}}]$ is the unique solution of
+\[
+ d_{\mathrm{Bern}}\bigl(q_{\mathrm{corp}}|\beta(q_{\mathrm{corp}},D)\bigr)=D,
+\]
+then
+\[
+    P_\theta(S)\ge \beta(q_{\mathrm{corp}},D).
+\]
+A fully explicit, slightly weaker bound is
+\[
+ P_\theta(S)
+ \ge
+ \exp\left(-\frac{D+h_2(q_{\mathrm{corp}})}{q_{\mathrm{corp}}}\right)
+ =q_{\mathrm{corp}}(1-q_{\mathrm{corp}})^{(1-q_{\mathrm{corp}})/q_{\mathrm{corp}}}
+   \exp(-D/q_{\mathrm{corp}}),
+\]
+where $h_2(q)=-q\log q-(1-q)\log(1-q)$ is the binary entropy in nats.
 \end{lemma}
 
- %The answer comes from this compact inequality. Because LLMs assign positive probability to every sequence type that appeared in the training data ($P_{\theta} \ll Q$, known as absolute continuity), and because the Kullback-Leibler divergence $\mathrm{KL}(Q \parallel P_{\theta})$ remains finite whenever training loss is finite, the bound follows rigorously.
-
-$P_{\theta} \ll Q$ is known as known as absolute continuity. Whenever the training data assigns zero probability to a sequence, the trained model also assigns zero probability to that sequence. More formally: $P_{\theta}(x) >0$  whenever $Q(x)>0$, and $P_{\theta}(x) = 0$ whenever $Q(x) = 0$.
-
-
-This inequality says that the residual invalidation probability cannot be driven to zero unless either the corpus is completely free of invalidations ($q=0$) or the model's divergence from the corpus becomes infinite, which would imply infinite loss. The floor can be exponentially small when the model departs sharply from the training data through extensive fine-tuning, yet it never vanishes entirely.
-
-
 \begin{proof}
-Expand the KL divergence and partition the sum by membership in $S$:
+Apply the measurable map $\varphi(x)=\mathbf 1_{\{x\in S\}}$.  The pushforwards
+of $Q$ and $P_\theta$ under $\varphi$ are Bernoulli distributions with
+parameters $q_{\mathrm{corp}}$ and $p_\theta=P_\theta(S)$, respectively.  The
+data-processing inequality gives
 \[
-\mathrm{KL}(Q \parallel P_{\theta}) = \sum_{x \in S} Q(x) \log \frac{Q(x)}{P_{\theta}(x)} + \sum_{x \notin S} Q(x) \log \frac{Q(x)}{P_{\theta}(x)}.
+D_{\mathrm{KL}}(Q|P_\theta)
+\ge
+D_{\mathrm{KL}}\bigl(\mathrm{Bern}(q_{\mathrm{corp}})|\mathrm{Bern}(p_\theta)\bigr)
+=
+d_{\mathrm{Bern}}(q_{\mathrm{corp}}|p_\theta).
 \]
-Since KL divergence terms are non-negative, we have
+Since $q_{\mathrm{corp}}>0$, the binary divergence is infinite when
+$p_\theta=0$, so finite KL divergence forces $p_\theta>0$.  For fixed
+$q\in(0,1]$, the function $p\mapsto d_{\mathrm{Bern}}(q|p)$ is continuous and
+strictly decreasing on $(0,q]$, with limit $+\infty$ as $p\downarrow0$ and
+value $0$ at $p=q$.  Hence the inverse lower bound follows.  For the explicit
+bound, write
 \[
-\mathrm{KL}(Q \parallel P_{\theta}) \geq \sum_{x \in S} Q(x) \log \frac{Q(x)}{P_{\theta}(x)}.
+ d_{\mathrm{Bern}}(q|p)
+ =-h_2(q)-q\log p-(1-q)\log(1-p)
+ \ge -h_2(q)-q\log p,
 \]
-Apply the log-sum inequality (for positive numbers $a_i, b_i$ with $A = \sum_i a_i$ and $B = \sum_i b_i$, we have $\sum_i a_i \log \frac{a_i}{b_i} \geq A \log \frac{A}{B}$) to the right-hand side. Setting $a_x = Q(x)$ and $b_x = P_{\theta}(x)$ for $x \in S$, we get:
-\[
-\sum_{x \in S} Q(x) \log \frac{Q(x)}{P_{\theta}(x)} \geq Q(S) \log \frac{Q(S)}{P_{\theta}(S)} = q \log \frac{q}{P_{\theta}(S)}.
-\]
-Therefore $q \log \frac{q}{P_{\theta}(S)} \leq \mathrm{KL}(Q \parallel P_{\theta})$. Solving for $P_{\theta}(S)$ yields:
-\[
-P_{\theta}(S) \geq q \exp\bigl(-\mathrm{KL}(Q \parallel P_{\theta})/q\bigr).
-\]
+because $-\log(1-p)\ge0$.  Since $d_{\mathrm{Bern}}(q|p)\le D$, we obtain
+$-h_2(q)-q\log p\le D$, and therefore
+$p\ge \exp\{-(D+h_2(q))/q\}$.
 \end{proof}
 
-The inequality is a logical guard-rail: when \(\mathrm{KL}\gg q\) the numerical floor may be tiny, yet it proves that any finite-loss model retains strictly positive invalidation probability.  External verification layers are therefore indispensable. 
+\begin{remark}[Absolute continuity]
+The finite-divergence assumption $D_{\mathrm{KL}}(Q|P_\theta)<\infty$ implies
+$Q\ll P_\theta$: every event with positive $Q$-mass must also have positive
+$P_\theta$-mass.  This is the relevant support condition.  In contrast,
+$P_\theta\ll Q$ would require the model to place zero probability on every
+string absent from the reference distribution, which is usually not appropriate
+when $Q$ is a finite empirical corpus and $P_\theta$ is a softmax language model.
+\end{remark}
 
-The practical consequence is inescapable: any errors, contradictions, or policy violations that survive in the training data leave an indelible statistical trace in the model. However sophisticated the training regimen (whether through reinforcement learning from human feedback, constitutional AI, or advanced safety fine-tuning) $P_{\theta}(S)$  remains strictly positive, so some risk of invalid output persists. This mathematical inevitability motivates our investigation of asymmetric task difficulties (Section~\ref{sec:efficient-engagement}), where we show that detecting invalidations is computationally easier than avoiding them during generation.
+\paragraph{Relation to sharper hallucination-floor results.}
+Lemma~\ref{lem:invalidation-floor} is deliberately modest: it is a
+support-and-divergence statement.  Stronger lower bounds are available for base
+language models under additional training and calibration assumptions.  Kalai
+and Vempala show that calibrated language models must hallucinate on certain
+arbitrary facts at a rate controlled by the Good--Turing missing-mass or
+``monofact'' rate of the training corpus \parencite{kalai2024calibrated}.
+Kalai, Nachum, Vempala, and Zhang connect generative errors to an
+\emph{Is-It-Valid} (IIV) binary classification problem, showing that validity
+classification error induces lower bounds on base-model generation error under
+their distributional assumptions \parencite{kalai2025why}.  These results
+motivate the architecture below: make validity checking explicit, then model its
+reliability through sensitivity, false positives, repair success, and
+common-mode blind spots.
+
+\paragraph{Interpretation.}
+If a reference distribution $Q$ contains invalid outputs with
+$q_{\mathrm{corp}}>0$, and a model remains close to $Q$ in KL divergence, then
+the model cannot remove all probability mass from the invalid set.  The theorem
+is not an absolute floor for every possible deployment pipeline.  A system can
+lower delivered error by changing the sampling distribution, retrieving external
+evidence, rejecting candidates, enforcing formal constraints, or routing outputs
+through verifiers.  The mathematical question therefore shifts from whether one
+model can be perfect to the conditions under which verifier networks reduce
+residual invalidity.
 
 %------------------------------------------------
-\paragraph{From Inevitability to Mitigation.}
-Lemma~\ref{lem:invalidation-floor} establishes that $P_{\theta}(S) > 0$ whenever  training loss is finite, i.e. invalidation is mathematically inevitable. This floor  exists because LLMs maximize likelihood over their training distribution $Q$, which itself contains errors at rate $q > 0$. The bound $P_{\theta}(S) \geq q \exp(-\mathrm{KL}(Q \parallel P_{\theta})/q)$ shows that even aggressive fine-tuning (large KL divergence) cannot eliminate invalidations entirely.
-
-This inevitability motivates a strategic pivot: rather than pursuing the 
-impossible goal of zero invalidation through model improvement alone, we must  design systems that detect and correct errors post-generation. The key insight is that different types of LLM outputs have different amenability to verification. As we show next, verification tasks (e.g. asking models to identify flaws in existing  text) lie in high-probability regions of the output distribution and thus can  be generated reliably even by imperfect models. 
-%External verification layers are therefore indispensable. However, this raises a fundamental question: can verification itself be trusted when performed by models subject to the same invalidation floor? We address this next by proving that verification tasks occupy a fundamentally different region of the output distribution than generation tasks.
-
-%------------------------------------------------
-\subsection{Information-Theoretic Basis for Verification Advantage}
+\subsection{Verification advantage as a conditional channel property}
 \label{sec:verification-advantage}
 %------------------------------------------------
 
-The inevitability of invalidations established in Lemma~\ref{lem:invalidation-floor} raises a crucial question: if generation necessarily produces errors, can we at least detect them reliably? We now prove that verification is fundamentally easier than generation.
+Verification is not universally easier than generation.  Some false claims are
+easy to detect because they violate syntax, arithmetic, cited evidence, a formal
+specification, or well-indexed facts.  Other false claims require essentially
+the same expertise as generating the correct answer.  Modern agentic systems
+exploit verification most successfully when they add external evidence, tools,
+learned outcome verifiers, process reward models, debate, self-refinement, or
+formal checks
+\parencite{cobbe2021trainingverifiers,uesato2022processoutcome,lightman2023verify,irving2018debate,du2023multiagentdebate,yao2022react,schick2023toolformer}.  Conversely,
+intrinsic self-correction without external feedback can fail or degrade
+performance, and verifier effectiveness varies with problem difficulty,
+generator capability, and verifier capability
+\parencite{huang2023cannotselfcorrect,zhou2025verificationdynamics}.
 
-%------------------------------------------------
-\begin{theorem}[Variable-Length Entropy Comparison]\label{thm:variable_length_correct}
-    Let $\mathcal{G}$ and $\mathcal{V}$ be generation and verification tasks. Let:
-    \begin{itemize}
-    \item $(L_g, Y_g)$ and $(L_v, Y_v)$: joint random variables for length and content
-    \item $P_g^{(n)}$ and $P_v^{(n)}$: conditional distributions $P(Y_g|L_g=n)$ and $P(Y_v|L_v=n)$
-    \item $\pi_g(n)$ and $\pi_v(n)$: length distributions $P(L_g=n)$ and $P(L_v=n)$
-    \end{itemize}
-    Then (with all logarithms base 2, giving entropy in bits):
-    \[
-        H(L_g, Y_g) - H(L_v, Y_v) = H(L_g) - H(L_v) + \sum_{n} \pi_g(n)H(Y_g|L_g = n) - \sum_{n} \pi_v(n)H(Y_v|L_v = n),
-    \]
-    where the conditional entropy is:
-    \[
-        H(Y_g|L_g=n) = -\sum_{y \in \operatorname{supp}P_g^{(n)}} P_g^{(n)}(y) \log P_g^{(n)}(y),
-    \]
-    and similarly for $H(Y_v|L_v=n)$.
+The chain-rule identity for variable-length outputs is useful as bookkeeping,
+but it is not by itself a theorem of verification advantage.
+
+\begin{lemma}[Variable-length entropy decomposition]
+\label{lem:variable_length_decomposition}
+Let $(L_g,Y_g)$ and $(L_v,Y_v)$ be the joint length--content random variables
+for generation and verification tasks, respectively.  Let
+$\pi^{\mathrm{len}}_g(n)=\Pr(L_g=n)$ and
+$\pi^{\mathrm{len}}_v(n)=\Pr(L_v=n)$.  Then, with all logarithms in the same
+base,
+\begin{align*}
+H(L_g,Y_g)-H(L_v,Y_v)
+&=H(L_g)-H(L_v) \\
+&\quad +\sum_n \pi^{\mathrm{len}}_g(n)H(Y_g\mid L_g=n)
+       -\sum_n \pi^{\mathrm{len}}_v(n)H(Y_v\mid L_v=n).
+\end{align*}
+\end{lemma}
+
+\begin{proof}
+Apply $H(X,Y)=H(X)+H(Y\mid X)$ to $(L_g,Y_g)$ and $(L_v,Y_v)$ and subtract.
+\end{proof}
+
+\begin{definition}[Verification channel]
+\label{def:verification-channel}
+For a generated claim, let $E\in\{0,1\}$ indicate invalidity, with
+\[
+ \alpha=\Pr(E=1).
+\]
+Let $U\in\{0,1\}$ indicate a common-mode blind spot for the critic family under
+consideration.  Conditional on invalidity,
+\[
+  c=\Pr(U=1\mid E=1).
+\]
+If $U=1$, this critic family has no signal for the error.  For critic
+$i=1,\dots,m$, let $F_i\in\{0,1\}$ indicate that critic $i$ flags the claim.
+For non-common-mode invalid claims, define the aggregate detection probability
+\[
+  \delta_m=\Pr\left(\bigcup_{i=1}^m\{F_i=1\}\,\middle|\,E=1,U=0\right).
+\]
+For valid claims, define the aggregate false-positive probability
+\[
+  \eta_m=\Pr\left(\bigcup_{i=1}^m\{F_i=1\}\,\middle|\,E=0\right).
+\]
+When the critics are conditionally independent, with sensitivities
+$s_i=\Pr(F_i=1\mid E=1,U=0)$ and false-positive rates
+$r_i=\Pr(F_i=1\mid E=0)$, these reduce to
+\[
+  \delta_m=1-\prod_{i=1}^m(1-s_i),
+  \qquad
+  \eta_m=1-\prod_{i=1}^m(1-r_i).
+\]
+\end{definition}
+
+\begin{theorem}[Residual invalidity after cross-verification]
+\label{thm:verification-channel}
+Under Definition~\ref{def:verification-channel}, suppose a flagged invalid claim
+is successfully repaired or rejected with probability $\rho\in[0,1]$, and the
+repair procedure does not introduce new invalid claims.  Then the residual
+invalidity rate per generated claim after one verification round is
+\[
+\alpha_{\mathrm{out}}
+=
+\alpha\bigl[c+(1-c)(1-\rho\delta_m)\bigr].
+\]
+The expected false-positive review burden per generated claim is
+\[
+\phi_{\mathrm{fp}}=(1-\alpha)\eta_m,
+\]
+and the precision of a flag is
+\[
+\Pr(E=1\mid \exists i:F_i=1)
+=
+\frac{\alpha(1-c)\delta_m}
+{\alpha(1-c)\delta_m+(1-\alpha)\eta_m}.
+\]
+Under conditional independence, substitute
+$\delta_m=1-\prod_i(1-s_i)$ and $\eta_m=1-\prod_i(1-r_i)$.
 \end{theorem}
 
 \begin{proof}
-By the chain rule for joint entropy:
-\begin{align}\label{eq:entropy-generation}
-    H(L_g, Y_g) &= H(L_g) + H(Y_g|L_g) \nonumber \\
-                &= H(L_g) + \sum_n \pi_g(n)H(Y_g|L_g = n) \nonumber \\
-                &= H(L_g) + \sum_n \pi_g(n)\left[-\sum_{y \in \operatorname{supp}P_g^{(n)}} P_g^{(n)}(y)\log P_g^{(n)}(y)\right].
-\end{align}
-Similarly for $(L_v, Y_v)$:
-\begin{align}\label{eq:entropy-verification}
-    H(L_v, Y_v) &= H(L_v) + \sum_n \pi_v(n)H(Y_v|L_v = n)\nonumber\\
-                &= H(L_v) + \sum_n \pi_v(n)\left[-\sum_{y \in \operatorname{supp}P_v^{(n)}} P_v^{(n)}(y)\log P_v^{(n)}(y)\right].
-\end{align}
-Subtracting the Equation~\ref{eq:entropy-verification} from Equation~\ref{eq:entropy-generation} yields the stated result.
+An invalid claim in the common-mode blind spot contributes residual mass
+$\alpha c$.  For an invalid claim outside that blind spot, the verification
+ensemble flags it with probability $\delta_m$, and a flag removes or repairs the
+invalidity with probability $\rho$.  The residual non-common-mode contribution
+is therefore $\alpha(1-c)(1-\rho\delta_m)$.  Adding the two invalid cases gives
+$\alpha_{\mathrm{out}}$.  The false-positive burden follows by applying the
+same flag event under $E=0$.  The precision formula is Bayes' rule.
 \end{proof}
 
-\begin{remark}[Why General Theorems Fail]
-We cannot prove that verification is universally easier than generation because:
-\begin{enumerate}
-    %-------------        
-    \item \textbf{Length-content dependence}: In autoregressive models, length often encodes information (e.g., ``yes" vs. detailed explanations)
-    %-------------        
-    \item \textbf{Unobservable distributions}: We cannot measure the full tail of $P_g^{(n)}(y)$ or $P_v^{(n)}(y)$ empirically, making entropy estimates unreliable
-    %-------------        
-    \item \textbf{Task-specific constraints}: The set of valid sequences varies dramatically by domain and cannot be bounded universally
-    %-------------        
-\end{enumerate}
-Any rigorous claim must be task-specific and empirically grounded.
-\end{remark}
-
-For specific task pairs where we can measure output distributions empirically, define the \emph{observable concentration ratio}:
+\begin{corollary}[Homogeneous independent critics]
+\label{cor:homogeneous-critics}
+If $s_i=s$, $r_i=r$, the critics are conditionally independent, and $\rho=1$,
+then
 \[
-R_k(P) = \frac{\sum_{i=1}^k p_i}{\max(k/\lvert\operatorname{supp}P\rvert, \epsilon)}
+\alpha_{\mathrm{out}}(m)=\alpha\bigl[c+(1-c)(1-s)^m\bigr].
 \]
-where $p_1 \geq p_2 \geq \ldots$ are the ranked probabilities of distribution $P$  and $\epsilon > 0$ prevents division by zero.
+A target $\alpha_{\mathrm{out}}(m)\le\varepsilon$ is attainable by this critic
+family only if $\varepsilon>\alpha c$.  When
+$\alpha c<\varepsilon<\alpha$,
+\[
+ m_{\min}
+ =
+ \left\lceil
+ \frac{\log\left((\varepsilon/\alpha-c)/(1-c)\right)}{\log(1-s)}
+ \right\rceil.
+\]
+If $\varepsilon\le\alpha c$, adding more critics from the same blind-spot family
+cannot reach the target; one must reduce $c$ by adding genuinely new evidence
+sources, tools, modalities, human expertise, independent training data, or
+formal checks.
+\end{corollary}
 
-Empirical evidence suggests verification outputs are more concentrated than generation outputs:
+\paragraph{Decision-theoretic interpretation.}
+Classical binary decision theory explains why validity checking is the right
+primitive to isolate.  In a two-hypothesis problem with valid-candidate
+distribution $P_+$ and invalid-candidate distribution $P_-$, Le Cam's method
+bounds the Bayes risk of any binary verifier in terms of the total variation
+distance between $P_+$ and $P_-$ \parencite{lecam1973,tsybakov2009}.  This is a
+lower bound on binary testing difficulty, not a proof that generation is always
+harder.  The IIV reduction of Kalai, Nachum, Vempala, and Zhang gives the modern
+language-model analogue: validity-classification error induces lower bounds on
+base-model generative error under their distributional assumptions
+\parencite{kalai2025why}.  The channel parameters $(\delta_m,\eta_m,c,\rho)$,
+or their independent-critic summaries $(s_i,r_i,c,\rho)$, are the operational
+quantities that must be estimated in any deployed FOO system.
 
-\begin{itemize}
-    %-------------        
-    \item \textbf{Generation diversity}: \textcite{hashimoto2019unifying} measured that GPT-2's generation coverage (fraction of human-written continuations assigned high probability) is only 15-20\%, indicating that probability mass is spread across many valid but unseen completions. \textcite{holtzman2020curious} further showed that nucleus sampling with $p=0.95$ is needed to achieve human-like text diversity, confirming that generation probability is dispersed across a large tail.
-    %-------------      
-    \item \textbf{Verification concentration}: \textcite{schick2021exploiting} found that when prompted for binary classification, over 90\% of GPT-3's probability mass concentrates on the top 2-3 tokens (e.g., ``Yes"/``No" plus punctuation variants). \textcite{min2022rethinking} demonstrated that in-context learning for verification tasks achieves near-peak performance with just label tokens, suggesting the output distribution is highly peaked on a small vocabulary subset.
-    %-------------        
-    \item \textbf{Direct comparison}: \textcite{kadavath2022language} showed that language models' self-evaluation of their own outputs clusters around confidence values of 0.1, 0.5, and 0.9 (high concentration), while their actual answer distribution spans hundreds of phrasings (low concentration). This asymmetry between evaluation and generation distributions supports our theoretical framework.
-    %-------------        
-\end{itemize}
+\paragraph{Implications for discursive networks.}
+The theorem gives a conditional verification-advantage claim.  Cross-agent
+critique reduces delivered invalidity when sensitivities are positive, repair
+probability is nontrivial, false-positive burden is manageable, and common-mode
+blind spots are small.  It does not promise arbitrary error reduction when
+agents share the same training data, missing evidence, prompt framing, or
+reasoning pathology.  This formulation identifies exactly which quantities must
+be measured or engineered.
 
-This observable difference in concentration, while not universal, appears 
-consistently enough to motivate verification-based error reduction strategies.
-%\end{proposition}
-
-\paragraph{Implications for Discursive Networks.}
-The empirical concentration differences documented above provide practical justification for why cross-agent critique can achieve detection rates $d$ that exceed invalidation rates $\lambda$. When LLMs are tasked with verification (e.g., ``find flaws" in peer outputs) they operate in the high-concentration regime where dominant patterns from training data guide responses. This contrasts with generation tasks that require exploring the long tail of the output distribution. While we cannot prove a universal 
-entropy gap $H(Y_g|L_g) - H(Y_v|L_v) > 0$ without task-specific assumptions (as shown in Theorem~\ref{thm:variable_length_correct}), the consistent empirical pattern of verification concentration exceeding generation concentration suggests that detection rates $d$ can systematically exceed fabrication rates $\lambda$ in practice. 
 
 %===============================================
 \subsection{Discursive Network Formalization}\label{sec:discursive}
@@ -516,690 +684,535 @@ To systematically study the phenomenon of invalidation, we propose a formal mode
 
 %------------------------------------------------
 \subsubsection{Single-Network Two-State Model}
+\label{sec:single-network-two-state}
 %------------------------------------------------
-Let $n=|A|$ be the actor count in the
-collapsed network with two mutually exclusive statements
-$S=\{r,f\}$, where $r$ denotes a \textbf{true} statement and $f$ a \textbf{false} one. For comparison with empirical simulations we work exclusively with
-\emph{proportions}. 
-The population state at time~$t$ is the column vector
+
+Let $n=|A|$ be the actor count in a collapsed single network with two mutually
+exclusive statement states
 \[
-\boldsymbol{\pi}(t)=\bigl(\pi_{T}(t),\pi_{F}(t)\bigr)^{\mathsf T},\qquad
-\pi_{T}(t)=\frac{T(t)}{n}, 
-\pi_{F}(t)=\frac{F(t)}{n}=1-\pi_{T}(t),
+    S=\{r,f\},
 \]
-where $T(t)$ and $F(t)$ are the respective counts of actors endorsing
-$r$ and $f$.
-Micro-level flips are characterized by the probabilities  
-$p$ for $r \rightarrow f$ and  
-$q$ for $f \rightarrow r$.
-These induce the population-level transition matrix
+where $r$ denotes a valid or true state and $f$ denotes an invalid or false
+state.  We work in proportions rather than raw counts.  The population state at
+time $t$ is
+\[
+\boldsymbol{\pi}(t)=\bigl(\pi_T(t),\pi_F(t)\bigr)^{\mathsf T},\qquad
+\pi_T(t)=\frac{T(t)}{n},
+\qquad
+\pi_F(t)=\frac{F(t)}{n}=1-\pi_T(t).
+\]
+
+The canonical model summarizes state change by two effective pressures:
+\[
+    a=\hbox{invalidation pressure from }r\hbox{ to }f,
+    \qquad
+    b=\hbox{correction pressure from }f\hbox{ to }r.
+\]
+There are two mathematically distinct interpretations.  In a one-round
+Bernoulli model, $a$ and $b$ are transition probabilities and must lie in
+$(0,1)$.  In a continuous-time hazard model, $a$ and $b$ are nonnegative rates
+and may exceed one when measured per unit time.  Both interpretations have the
+same stationary false-state share, but they have different time evolutions.
+This distinction matters later because additive hazards such as
+$q+(n-1)d$ can exceed one even though no one-round probability can.
+
+In the discrete one-round interpretation, the population-level transition
+matrix is
 \begin{equation}\label{eq:single-network-system1}
-    T=\begin{pmatrix}
-    1-p & q\\
-    p   & 1-q
+    T_{a,b}=\begin{pmatrix}
+    1-a & b\\
+    a   & 1-b
     \end{pmatrix},
     \qquad
-    \boldsymbol{\pi}(t+1)=T\,\boldsymbol{\pi}(t).
+    \boldsymbol{\pi}(t+1)=T_{a,b}\boldsymbol{\pi}(t),
 \end{equation}
-The mapping of this model to Definition \ref{def:discursive_network} is provided in Table \ref{tab:Single-Network-Dual-State}. 
+and the false-state fraction obeys
+\begin{equation}\label{eq:false-recursion-ab}
+    \pi_F(t+1)=a+(1-a-b)\pi_F(t).
+\end{equation}
+In the continuous-time hazard interpretation, the corresponding scalar equation
+is
+\begin{equation}\label{eq:false-ode-ab}
+    \frac{d}{dt}\pi_F(t)=a\bigl(1-\pi_F(t)\bigr)-b\pi_F(t)
+    =a-(a+b)\pi_F(t).
+\end{equation}
+
+The mapping of this model to Definition~\ref{def:discursive_network} is provided
+in Table~\ref{tab:Single-Network-Dual-State}.  The table states the base case
+$a=p$, $b=q$; the next subsections retain the same structure while changing the
+effective values of $a$ and $b$.
 
 \begin{table}[htbp]
     \centering
     \setlength{\tabcolsep}{6pt}
     \renewcommand{\arraystretch}{1.15}
-    \caption{Mapping of discursive network elements to the single-network invalidation problem.}
+    \caption{Mapping of discursive network elements to the single-network two-state model.}
     \label{tab:Single-Network-Dual-State}
     \begin{tabularx}{6.5in}{@{}lX@{}}
     \toprule
-    \textbf{Element in $N$} & \textbf{Instantiation in single-network model} \\
+    \textbf{Element in $N$} & \textbf{Instantiation in the single-network model} \\
     \midrule
-    $S=\{r,f\}$ & Binary, mutually exclusive statements (\emph{true} vs. \emph{false}).\\
-    $P_{ij}$ & $p$ if $B_{j}=\{r\}$ and $B_{i}=\{f\}$; $q$ if $B_{j}=\{f\}$ and $B_{i}=\{r\}$.\\
-    $I_{ij}$ & Contradiction if $B_{i}\neq B_{j}$.\\
-    $C_{ij}$ & Message containing $B_{i}$.\\
-    $A$ & Unchanged actor set; proportions refer to $n=|A|$.\\
-    $B_{i}$ & $\{r\}$ or $\{f\}$ for each actor.\\
-    $U_{j}$ & Switches $B_{j}$ with the corresponding probability, otherwise leaves it unchanged.\\
-    $G_{i}$ & Persuade others to adopt actor $a_{i}$'s current belief.\\
+    $S=\{r,f\}$ & Binary, mutually exclusive statement states: $r$ is valid/true and $f$ is invalid/false.\\
+    $P_{ij}$ & Base persuasion or drift: $p$ contributes to $r\to f$ and $q$ contributes to $f\to r$.  In the generic form these are summarized by $a=p$ and $b=q$.\\
+    $I_{ij}$ & In the single-network base case, invalidation is represented by the transition $r\to f$; correction is represented by $f\to r$.\\
+    $C_{ij}$ & Message containing the current belief state $B_i\in\{\{r\},\{f\}\}$.\\
+    $A$ & Fixed actor set; proportions refer to $n=|A|$.\\
+    $B_i$ & Current belief of actor $a_i$: either $\{r\}$ or $\{f\}$.\\
+    $U_j$ & Update rule applying either the one-round transition matrix $T_{a,b}$ or the continuous-time hazard equation with the same $a,b$ equilibrium.\\
+    $G_i$ & Goal: persuade others to adopt actor $a_i$'s current belief.\\
     \bottomrule
     \end{tabularx}
 \end{table}
 
-\begin{lemma}[Single-network invalidation propagation]\label{lem:basic_invalidation}
-Let the single-network proportion state evolve according to 
-\begin{equation}\label{eq:single-network-system}
-\boldsymbol{\pi}(t+1)=T\,\boldsymbol{\pi}(t),\qquad
-T=\begin{pmatrix}
-1-p & q\\[4pt]
-p   & 1-q
-\end{pmatrix},
-\qquad
-\boldsymbol{\pi}(t)=
-\begin{pmatrix}
-\pi_{T}(t)\\ \pi_{F}(t)
-\end{pmatrix},
-\pi_{T}(t)+\pi_{F}(t)=1,
-\end{equation}
-with flip probabilities $p,q\in(0,1)$.
-The system has a unique fixed point
+\begin{lemma}[Single-network two-state equilibrium]
+\label{lem:basic_invalidation}
+Let $a,b>0$.  In the continuous-time hazard model
+\eqref{eq:false-ode-ab}, the unique stationary false-state share is
 \[
-\boldsymbol{\pi}^{*}=\begin{pmatrix}
-\dfrac{q}{p+q}\\[6pt]
-\dfrac{p}{p+q}
+    \pi_F^*=\frac{a}{a+b},
+    \qquad
+    \pi_T^*=\frac{b}{a+b},
+\]
+and every solution satisfies
+\[
+    \pi_F(t)-\pi_F^*=e^{-(a+b)t}\bigl(\pi_F(0)-\pi_F^*\bigr).
+\]
+In the discrete one-round Bernoulli model \eqref{eq:single-network-system1}, if
+$0<a,b<1$, then the same fixed point is
+\[
+\boldsymbol{\pi}^{*}
+=
+\begin{pmatrix}
+\dfrac{b}{a+b}\\[6pt]
+\dfrac{a}{a+b}
 \end{pmatrix},
 \]
-and the second eigenvalue of $T$ equals $1-p-q$, whose modulus
-is strictly smaller than~$1$; hence the Markov chain converges
-geometrically to $\boldsymbol{\pi}^{*}$ from any initial distribution.
+and the chain converges geometrically from every initial distribution; the
+second eigenvalue is $1-a-b$.  In the base case $a=p$, $b=q$, this gives
+\[
+\pi_T^*=\frac{q}{p+q},\qquad
+\pi_F^*=\frac{p}{p+q}.
+\]
 \end{lemma}
 
 \begin{proof}
-A fixed point satisfies $\boldsymbol{\pi}=T\,\boldsymbol{\pi}$.
-Writing $\boldsymbol{\pi}^{\mathsf T}=(\pi_{T},\pi_{F})$ and expanding
-gives
-\begin{align*}
-\pi_{T} &= (1-p)\,\pi_{T}+q\,\pi_{F},\\
-\pi_{F} &= p\,\pi_{T}+(1-q)\,\pi_{F}.
-\end{align*}
-Because $\pi_{F}=1-\pi_{T}$, the first line reduces to
+For the continuous-time branch, setting the right-hand side of
+\eqref{eq:false-ode-ab} to zero gives
+$a-(a+b)\pi_F^*=0$, hence $\pi_F^*=a/(a+b)$ and
+$\pi_T^*=1-\pi_F^*=b/(a+b)$.  Solving the linear differential equation gives
 \[
-p\,\pi_{T}=q\,\pi_{F}=q\,(1-\pi_{T}),
-\quad\Longrightarrow\quad
-\pi_{T}=\frac{q}{p+q},\qquad
-\pi_{F}=1-\pi_{T}=\frac{p}{p+q}.
+    \pi_F(t)=\pi_F^*+e^{-(a+b)t}\bigl(\pi_F(0)-\pi_F^*\bigr).
 \]
-Thus the fixed point is unique.  
-The characteristic polynomial of $T$ is
-$l^{2}-(2-p-q)l+(1-p-q)=0$,
-whose roots are $l_{1}=1$ and
-$l_{2}=1-p-q$.
-Because $0<p+q<1$, we have $|l_{2}|<1$; hence
-$T^{t}\to\boldsymbol{\pi}^{*}\mathbf 1^{\mathsf T}$ as $t\to\infty$,
-so every trajectory converges to $\boldsymbol{\pi}^{*}$.
+For the discrete branch, a fixed point satisfies
+$\boldsymbol{\pi}=T_{a,b}\boldsymbol{\pi}$.  Writing
+$\boldsymbol{\pi}^{\mathsf T}=(\pi_T,\pi_F)$ and using
+$\pi_T+\pi_F=1$, the fixed-point equation reduces to
+\[
+    a\pi_T=b\pi_F,
+\]
+so $\pi_T=b/(a+b)$ and $\pi_F=a/(a+b)$.  The eigenvalues of $T_{a,b}$ are
+$\mu_1=1$ and $\mu_2=1-a-b$.  Since $0<a,b<1$, we have
+$0<a+b<2$ and therefore $|\mu_2|<1$, so deviations from equilibrium decay
+geometrically:
+\[
+    \pi_F(t)-\pi_F^*=(1-a-b)^t\bigl(\pi_F(0)-\pi_F^*\bigr).
+\]
 \end{proof}
 
-\paragraph{Interpretation of Lemma \ref{lem:basic_invalidation}.}
-In this binary model the two flip probabilities satisfy
-$p+q=1$, meaning every update attempt switches
-an actor's belief with probability one.
-The fixed point then simplifies to
-$\boldsymbol{\pi}^{*}=(q,\,p)^{\mathsf T}$:
-the long-run proportion of actors endorsing $r$ equals the single
-parameter $q$, while the proportion endorsing $f$ equals
-$p$.
-Thus the equilibrium distribution mirrors the flip probabilities
-directly; increasing $p$ (the propensity to abandon $r$)
-linearly increases the eventual share of $f$ believers and
-decreases that of $r$ believers by the same amount.
+\paragraph{Interpretation of Lemma~\ref{lem:basic_invalidation}.}
+The two-state model is governed by the ratio of inflow into the false state and
+outflow from it.  The stationary false-state share is $a/(a+b)$; increasing the
+invalidation pressure $a$ raises the long-run prevalence of $f$, while
+increasing the correction pressure $b$ lowers it.  The base model is recovered
+by setting $a=p$ and $b=q$.  The special case $p+q=1$ gives
+$\boldsymbol{\pi}^{*}=(q,p)^{\mathsf T}$, but the model does not require
+$p+q=1$.  When $a$ and $b$ are interpreted as probabilities, the transition
+matrix entries must be nonnegative.  When they are interpreted as continuous-time
+rates, the ODE branch applies and additive correction rates may exceed one
+without creating negative transition probabilities.
 
-%================================================
+
+%---------------------------------------
 \subsubsection{Single-Network Emergent Invalidation Model}
-%================================================
+\label{sec:single-network-emergent}
+%---------------------------------------
 
-The two-state single-network model sets sthe stage for the analysis of the emergence of invalidations in a discursive network. To accomplish this,  we first endow a \emph{single} discursive network with per-statement fabrication and internal correction.  This captures the behaviour of a single-instance LLM generating new text: invalidations  
-are injected at hazard $\lambda$, while subsequent self-reflections (or 
-post-processing heuristics) invalidate a fraction of the false statements at hazard $q$.
-
-\paragraph{Setup.}
-Let the network be $N$ with actor set $A=\{a_1,\dots,a_n\}$ and $n=|A|$.  
-At any time $t\in\mathbb{Z}_{\ge 0}$, we track the counts $T(t)$ and $F(t)$ of actors 
-endorsing true and false statements, respectively, with $T(t)+F(t)=n$.
-
-Working with raw counts becomes cumbersome when comparing networks of different sizes  or analyzing asymptotic behavior. By converting to proportions, we obtain: (i) {Scale invariance}: Networks with 100 or 10,000 actors can be compared directly, (ii) {Probabilistic interpretation}: Proportions represent the probability that a randomly selected actor holds a given belief, and (iii) {Mathematical tractability}: Fixed-point analysis and stability results are cleaner in normalized coordinates. 
-
-\begin{definition}[Normalized state]\label{def:single_state}
-The proportion state (or normalized state) of the single network at time~$t$ is the vector
+The base two-state model separates false-state inflow from false-state outflow.
+Emergent invalidation adds a fabrication or hallucination channel to the
+ordinary truth-to-false drift.  We encode the combined false-production pressure
+by
+\begin{equation}\label{eq:a-single}
+    a_{\mathrm{single}}=p+\lambda,
+\end{equation}
+where $p$ is intrinsic truth-to-false drift and $\lambda$ is fresh fabrication.
+Equation~\eqref{eq:a-single} is the additive-rate convention and is also the
+first-order approximation when $p$ and $\lambda$ are small Bernoulli
+probabilities.  If they are modeled as independent one-round Bernoulli channels,
+then replace Eq.~\eqref{eq:a-single} by the exact expression
 \[
-\boldsymbol{\pi}(t)=\bigl(\pi_T(t),\pi_F(t)\bigr),\qquad
-\pi_T(t)=\frac{T(t)}{n},\pi_F(t)=\frac{F(t)}{n},
+    a_{\mathrm{single}}=1-(1-p)(1-\lambda).
 \]
-where $\pi_T(t)$ and $\pi_F(t)$ represent the fractions of actors endorsing true and 
-false statements, respectively. The constraint $\pi_T(t)+\pi_F(t)=1$ is automatically 
-preserved, reflecting that every actor holds exactly one belief at each time step.
-\end{definition}
-
-%------------------------------------------------
-\paragraph{Stochastic primitives.}
-Events are scaled \emph{per statement} so that $\lambda$, $p$ 
-and $q$ remain commensurate.
-
-
-\paragraph{Fabrication (invalidation).}  In this case, $X$ represents
-the number of new falsehoods generated. The Poisson distribution is 
-used to model the number of events occurring in a fixed interval of 
-time, given a known average rate.  Each true statement is 
-independently falsified during $[t,t+1)$:
+The isolated false-to-true correction pressure is
+\begin{equation}\label{eq:b-single}
+    b_{\mathrm{single}}=q.
+\end{equation}
+The normalized state remains
 \[
-X(t) \sim \text{Poisson}\bigl(\lambda\,T(t)\bigr).
+\boldsymbol{\pi}(t)=\bigl(\pi_T(t),\pi_F(t)\bigr)^{\mathsf T},
+\qquad \pi_T(t)+\pi_F(t)=1,
 \]
-         
-\paragraph{Internal flips.}  $Z$ represents the number of true statements  
-that become false with a fixed probability $p$  of becoming false 
-(i.e. $p$ is the intrinsic truth→false hazard). $W$ 
-represents the number of false statements that are corrected to become 
-true with a fixed  probability $q$ of being corrected 
-($q$ models spontaneous acknowledgement or repair). Both follow a Binomial 
-distribution.  Truths can degrade and falsehoods can self-correct:
-\[
-Z(t)\sim\mathrm{Binomial}\bigl(T(t),p\bigr),\quad
-W(t)\sim\mathrm{Binomial}\bigl(F(t),q\bigr).
-\]
+and the dynamics are
+\begin{equation}\label{eq:single-lambda-matrix}
+\boldsymbol{\pi}(t+1)=T_{\lambda}\boldsymbol{\pi}(t),\qquad
+T_{\lambda}=\begin{pmatrix}
+1-a_{\mathrm{single}} & q\\
+a_{\mathrm{single}} & 1-q
+\end{pmatrix}.
+\end{equation}
 
-%------------------------------------------------
-\paragraph{Update equations.}
-Define
-\[
-\Delta T(t)= -Z(t)+W(t),\qquad
-\Delta F(t)= X(t)+Z(t)-W(t).
-\]
-Then
-\begin{align}
-T(t+1) &= T(t)+\Delta T(t), & \pi_T(t+1) &= \pi_T(t)+\frac{\Delta T(t)}{n}, \\[-1ex]
-F(t+1) &= F(t)+\Delta F(t), & \pi_F(t+1) &= \pi_F(t)+\frac{\Delta F(t)}{n},
-\end{align}
-with $\pi_T(t+1)+\pi_F(t+1)=1$ preserved.
-
-The mapping of this model to Definition \ref{def:discursive_network} is provided in Table \ref{tab:Single-Network-Invalidation}.
+The mapping of this specialization to Definition~\ref{def:discursive_network}
+is provided in Table~\ref{tab:Single-Network-Invalidation}.
 
 \begin{table}[htbp]
     \centering
     \setlength{\tabcolsep}{6pt}
     \renewcommand{\arraystretch}{1.15}
-    \caption{Mapping of discursive-network elements to the \emph{single-network emergent-invalidation} model.  Unless noted otherwise, all rates are \emph{per statement}.}
+    \caption{Mapping of discursive-network elements to the single-network emergent-invalidation model.}
     \label{tab:Single-Network-Invalidation}
     \begin{tabularx}{6.5in}{@{}lX@{}}
         \toprule
-        \textbf{Element in $N$} & \textbf{Instantiation in emergent-invalidation model} \\
+        \textbf{Element in $N$} & \textbf{Instantiation in the emergent-invalidation model} \\
         \midrule
-        $S=\{r,f\}$ & Binary statements ($r$ = true, $f$ = false). \\
-        $P_{ij}$ & Spontaneous flips: $p$ for $r \to f$ (appears in $Z(t)$), $q$ for $f \to r$ (appears in $W(t)$). \\ 
-        $I_{ij}$ & Internal invalidation; realized as self-correction $\mathrm{Binomial}(F(t),q)$ when $i=j$.  (No cross-actor invalidation in the single-network setting.) \\
-        $C_{ij}$ & Message from $a_i$ to $a_j$ containing $B_i$. \\
-        $A$ & Fixed actor set; proportions refer to $n=\lvert A\rvert$. \\
-        $B_i$ & Current belief of actor $a_i$: $\{r\}$ or $\{f\}$. \\
-        $U_j$ & Update rule applying the three hazards:\\ & \hspace{1em}$X(t)\sim\mathrm{Poisson}(\lambda T(t))$  (fabrications)\\ & \hspace{1em}$Z(t)\sim\mathrm{Binomial}(T(t),p)$  (truth \textrightarrow\ false)\\ & \hspace{1em}$W(t)\sim\mathrm{Binomial}(F(t),q)$  (false \textrightarrow\ true)\\
-        $G_i$ & Goal: persuade all other actors to adopt $B_i$. \\
+        $S=\{r,f\}$ & Binary statement states: $r$ is valid/true and $f$ is invalid/false.\\
+        $P_{ij}$ & Intrinsic drift $p$ contributes to $r\to f$; correction $q$ contributes to $f\to r$.\\
+        $I_{ij}$ & Internal invalidation and self-correction are summarized by the effective transition pressures $a_{\mathrm{single}}=p+\lambda$ and $b_{\mathrm{single}}=q$.\\
+        $C_{ij}$ & Message from $a_i$ to $a_j$ carrying $B_i$.\\
+        $A$ & Fixed actor set; proportions refer to $n=|A|$.\\
+        $B_i$ & Current belief of actor $a_i$: $\{r\}$ or $\{f\}$.\\
+        $U_j$ & Update rule applying $T_{\lambda}$ in Eq.~\eqref{eq:single-lambda-matrix}.\\
+        $G_i$ & Goal: persuade other actors to adopt the current belief state.\\
         \bottomrule
     \end{tabularx}
 \end{table}
 
-%------------------------------------------------
-\begin{lemma}[Single-network invalidation with fabrication]\label{lem:single_lambda}
-Let the single-network proportion state evolve according to  
+\begin{lemma}[Single-network invalidation with fabrication]
+\label{lem:single_lambda}
+Let $a_{\mathrm{single}}=p+\lambda$ and $b_{\mathrm{single}}=q$.  Under
+either the discrete one-round interpretation with
+$0<a_{\mathrm{single}},b_{\mathrm{single}}<1$ or the continuous-time hazard
+interpretation with $a_{\mathrm{single}},b_{\mathrm{single}}>0$, the
+single-network emergent-invalidation model has stationary state
 \[
-\boldsymbol{\pi}(t+1)=T_\lambda\,\boldsymbol{\pi}(t),\qquad
-T_\lambda=\begin{pmatrix}
-1-(p+\lambda) & q \\
-p+\lambda     & 1-q
-\end{pmatrix},
-\qquad
-\boldsymbol{\pi}(t)=
-\begin{pmatrix}\pi_{T}(t)\\[2pt] \pi_{F}(t)\end{pmatrix},
-\pi_{T}(t)+\pi_{F}(t)=1,
+\boldsymbol{\pi}^{*}
+=
+\begin{pmatrix}
+\dfrac{q}{p+\lambda+q}\\[6pt]
+\dfrac{p+\lambda}{p+\lambda+q}
+\end{pmatrix}.
 \]
-where  
-\(p,q\in(0,1)\) are the intrinsic flip probabilities,  
-\(\lambda\in\bigl(0,1-p\bigr)\) is the per-statement fabrication probability
-(\(r \to f\)), and \(p+\lambda+q<1\).  
-Then:
-
-1.  The system has a unique fixed point  
-    \[
-      \boldsymbol{\pi}^{*}=
-      \begin{pmatrix}
-        \dfrac{q}{p+\lambda+q}\\[6pt]
-        \dfrac{p+\lambda}{p+\lambda+q}
-      \end{pmatrix}.
-    \]
-
-2.  The second eigenvalue of \(T_\lambda\) is \(1-(p+\lambda+q)\), whose
-    modulus is strictly smaller than \(1\); hence the Markov chain converges
-    geometrically to \(\boldsymbol{\pi}^{*}\) from any initial distribution.
+In the discrete one-round branch, the second eigenvalue is
+$1-(p+\lambda+q)$; in the continuous-time branch, the exponential convergence
+rate is $p+\lambda+q$.
 \end{lemma}
 
 \begin{proof}
-A fixed point satisfies \(\boldsymbol{\pi}=T_\lambda\,\boldsymbol{\pi}\).
-Writing \(\boldsymbol{\pi}^{\mathsf T}=(\pi_{T},\pi_{F})\) and expanding gives
-\begin{align*}
-\pi_{T} &= (1-p-\lambda)\,\pi_{T}+q\,\pi_{F},\\
-\pi_{F} &= (p+\lambda)\,\pi_{T}+(1-q)\,\pi_{F}.
-\end{align*}
-Because \(\pi_{F}=1-\pi_{T}\), the first line reduces to
-\(
-(p+\lambda)\,\pi_{T}=q\,(1-\pi_{T}),
-\)
-which yields the fixed point in the statement.  
-The characteristic polynomial of \(T_\lambda\) is
-\(l^{2}-(2-p-\lambda-q)l+(1-p-\lambda-q)=0\),
-with roots \(l_{1}=1\) and
-\(l_{2}=1-(p+\lambda+q)\).
-Since \(p+\lambda+q<1\), we have \(|l_{2}|<1\); therefore
-\(T_\lambda^{\,t}\to\boldsymbol{\pi}^{*}\mathbf 1^{\mathsf T}\) as
-\(t\to\infty\), so every trajectory converges to \(\boldsymbol{\pi}^{*}\).
+Apply Lemma~\ref{lem:basic_invalidation} with
+$a=a_{\mathrm{single}}=p+\lambda$ and $b=b_{\mathrm{single}}=q$, using the
+discrete or continuous branch according to the interpretation of the parameters.
 \end{proof}
 
 \paragraph{Interpretation.}
-The fabrication term \(\lambda\) simply augments the ordinary truth-to-false
-hazard \(p\).  Consequently the equilibrium share of false believers rises
-from \(p/(p+q)\) (when \(\lambda=0\)) to \((p+\lambda)/(p+\lambda+q)\), while
-the speed of convergence slows as the spectral gap
-\(1-\lvert 1-(p+\lambda+q)\rvert\) narrows.
-Fabrication raises the inflow into the false state 
-by $\lambda$, while internal invalidation $q$ is unchanged.  If $\lambda>q$ the 
-system becomes ``invalidation-dominant," mimicking an LLM that generates more new errors than it self-repairs, an empirical regime reported in LLMs (cf. Section \ref{sec:theoretical-validation}).
+The fabrication term $\lambda$ increases the effective inflow into the false
+state.  The isolated network is falsehood-majority exactly when
+$p+\lambda>q$.  In the discrete branch, $p+\lambda+q<1$ gives monotone
+geometric convergence and $p+\lambda+q\in(1,2)$ gives oscillatory geometric
+convergence.  In the continuous-time branch, convergence is monotone and
+exponential with rate $p+\lambda+q$.  Increasing $\lambda$ raises the false
+equilibrium; it does not by itself imply slower convergence.
 
-
-%================================================
+%---------------------------------------
 \subsubsection{Cross-Network Invalidation-Detection Model}
-%================================================
-Now that we have studied single networks with and without spontaneous invalidation emergence, the next natural question is how to reduce invalidations. As we will see, using multiple discursive networks reduces invalidations. 
+\label{sec:cross-network-detection}
+%---------------------------------------
 
-%------------------------------------------------
-Let the two discursive networks be
-$N_{1}$ and $N_{2}$ with actor sets
-$A_{1}=\{a_{11},\dots,a_{1n_{1}}\}$ and
-$A_{2}=\{a_{21},\dots,a_{2n_{2}}\}$; write $n_{k}=|A_{k}|$.
-
-\begin{definition}[Normalized state]\label{def:cross_state}
-For each network $N_{k}$ the proportion state at time~$t$ is
+Cross-network detection increases the effective false-to-true correction
+pressure.  Consider a focal network $N_k$ with intrinsic false-production
+pressure
 \[
-\boldsymbol{\pi}_{k}(t)=\bigl(\pi_{T,k}(t),\pi_{F,k}(t)\bigr),
-\qquad
-\pi_{T,k}(t)=\frac{T_{k}(t)}{n_{k}},
-\pi_{F,k}(t)=\frac{F_{k}(t)}{n_{k}},
-\pi_{T,k}(t)+\pi_{F,k}(t)=1,
+    a_k=p_k+\lambda_k
 \]
-where $T_{k}(t)$ and $F_{k}(t)$ are the counts of true and false
-statements, respectively.
-\end{definition}
+under the additive-rate convention.  Let $q_k$ be its internal correction
+pressure.  Let a partner network $N_j$ detect and correct false statements in
+$N_k$ with external parameter $d_{jk}>0$.
 
-%------------------------------------------------
-\paragraph{Stochastic primitives.}
-All events are now specified so that their \emph{rates are comparable across networks regardless of size}.  In particular, fabrication is scaled by the \emph{current stock of true statements}.
-
-\paragraph{Falsehood generation (fabrication).}
-Each currently true statement in $N_{k}$ is independently falsified during $[t,t+1)$.
-The total number of such events is
+There are two useful aggregation regimes.
+\begin{enumerate}
+\item \emph{Continuous-time hazard model.}  Independent correction clocks add,
+      so the effective correction rate is
+      \begin{equation}\label{eq:b-cross-rate}
+      b_k^{\mathrm{rate}}=q_k+d_{jk}.
+      \end{equation}
+\item \emph{Exact one-round Bernoulli model.}  Internal and external correction
+      channels both miss a false statement with probability
+      $(1-q_k)(1-d_{jk})$, so the effective one-round correction probability is
+      \begin{equation}\label{eq:b-cross-disc}
+      b_k^{\mathrm{disc}}=1-(1-q_k)(1-d_{jk}).
+      \end{equation}
+\end{enumerate}
+The proportion state is
 \[
-X_{k}(t)\sim\text{Poisson}\bigl(\lambda_{k}\,T_{k}(t)\bigr),
+\boldsymbol{\pi}_k(t)=\bigl(\pi_{T,k}(t),\pi_{F,k}(t)\bigr)^{\mathsf T},
+\qquad \pi_{T,k}(t)+\pi_{F,k}(t)=1,
 \]
-where $\lambda_{k}$ is the \emph{per-statement} fabrication hazard.
+and the same two-state equilibrium applies with $a=a_k$: the continuous-time
+ODE branch uses $b=b_k^{\mathrm{rate}}$, while the exact one-round Bernoulli
+branch uses the transition matrix with $b=b_k^{\mathrm{disc}}$.
 
-\paragraph{Cross-network detection.}
-Each false statement in $N_{k}$ is noticed by $N_{j}$ with probability $d_{jk}$, so
-\(
-Y_{jk}(t)\sim\mathrm{Binomial} \bigl(F_{k}(t),d_{jk}\bigr).
-\)
-
-\paragraph{Internal flips.}
-True statements spontaneously become false with probability $p_{k}$, and false statements self-correct with probability $q_{k}$:
-\[
-Z_{k}(t)\sim\mathrm{Binomial} \bigl(T_{k}(t),p_{k}\bigr),\quad
-W_{k}(t)\sim\mathrm{Binomial} \bigl(F_{k}(t),q_{k}\bigr).
-\]
-
-
-%------------------------------------------------
-\paragraph{Normalized update equations.}
-Let $\Delta T_{k}(t)= -Z_{k}(t)+W_{k}(t)$ and
-$\Delta F_{k}(t)= X_{k}(t)+Z_{k}(t)-W_{k}(t)-Y_{jk}(t)$.
-Dividing by $n_{k}$ gives the proportion dynamics
-\begin{align}
-\pi_{T,k}(t+1) &= \pi_{T,k}(t)+\frac{\Delta T_{k}(t)}{n_{k}}, \label{eq:dual-T}\\
-\pi_{F,k}(t+1) &= \pi_{F,k}(t)+\frac{\Delta F_{k}(t)}{n_{k}}, \label{eq:dual-F}
-\end{align}
-with $\pi_{T,k}(t+1)+\pi_{F,k}(t+1)=1$ preserved automatically.
-
-The mapping of this model to Definition \ref{def:discursive_network} is provided in Table \ref{tab:Dual-Network}.
+The mapping of this specialization to Definition~\ref{def:discursive_network}
+is provided in Table~\ref{tab:Dual-Network}.
 
 \begin{table}[htbp]
     \centering
     \setlength{\tabcolsep}{6pt}
     \renewcommand{\arraystretch}{1.15}
-    \caption{Mapping of discursive-network elements to the \emph{cross-network
-             invalidation-detection} model.  All hazard rates are \emph{per statement}.}
+    \caption{Mapping of discursive-network elements to the cross-network invalidation-detection model.}
     \label{tab:Dual-Network}
     \begin{tabularx}{6.5in}{@{}lX@{}}
         \toprule
-        \textbf{Element in $N_{1}\cup N_{2}$} & \textbf{Instantiation in the model} \\
+        \textbf{Element in $N_{1}\cup N_{2}$} & \textbf{Instantiation in the cross-network model} \\
         \midrule
-        $S=\{r,f\}$ & Binary statements shared by both networks ($r$ = true, $f$ = false). \\[2pt]
-        $P_{ij}$ & \textbf{Persuasion function}.  Within each network $N_k$ it reduces to constant flip probabilities:   \hspace{1em}$p_k$ for $r \to f$ (used in $Z_k(t)$),   \hspace{1em}$q_k$ for $f \to r$ (used in $W_k(t)$).   Across networks, persuasion acts only via $I_{ij}$ with success probability $d_{jk}$. \\[6pt]
-        $I_{ij}$ & \textbf{Cross-network invalidation}: if $B_{ij}=\{f\}$ and the receiver belongs to the other network, the statement is detected and flipped with probability $d_{jk}$ (realized through the random variable $Y_{jk}(t)$). \\[4pt]
-        $C_{ij}$ & Message sent from $a_i$ to $a_j$ carrying $B_{ij}$.  Communication enables both persuasion and detection. \\[2pt]
-        $A_k$ & Two disjoint actor sets $A_1,A_2$; proportions refer to $n_k=\lvert A_k\rvert$. \\[2pt]
-        $B_{ij}$ & Belief of actor $a_{ij}\in A_k$: $\{r\}$ or $\{f\}$. \\[2pt]
-        $U_j$ & \textbf{Update rule} for actor $a_j$ that applies in the following  order    (i) fabrication $X_k(t)\sim\mathrm{Poisson}(\lambda_k T_k(t))$,   (ii) internal flips $Z_k(t),W_k(t)$ using $p_k,q_k$,   (iii) cross-network detection $Y_{jk}(t)$ using $d_{jk}$.  The parameter $\lambda_k$ therefore lives inside $U_j$. \\[2pt]
-        $G_{ij}$ & Goal: persuade every other actor (within and across networks) to adopt $B_{ij}$. \\[2pt]
+        $S=\{r,f\}$ & Binary statement states shared by both networks: $r$ is valid/true and $f$ is invalid/false.\\
+        $P_{ij}$ & Within $N_k$, $p_k$ contributes to $r\to f$ and $q_k$ contributes to $f\to r$. Across networks, detection by $N_j$ contributes $d_{jk}$ to false-to-true correction.\\
+        $I_{ij}$ & Cross-network invalidation: a receiver in $N_j$ can identify a false state in $N_k$ and trigger correction with parameter $d_{jk}$.\\
+        $C_{ij}$ & Message carrying the statement or belief state being evaluated.\\
+        $A_k$ & Disjoint actor sets $A_1,A_2$; proportions refer to $n_k=|A_k|$.\\
+        $B_{ij}$ & Belief of actor $a_{ij}\in A_k$: $\{r\}$ or $\{f\}$.\\
+        $U_j$ & Update rule applying the two-state equilibrium with $a_k=p_k+\lambda_k$: the continuous-time hazard branch uses $b_k=q_k+d_{jk}$, and the exact Bernoulli branch uses the transition matrix with $b_k=1-(1-q_k)(1-d_{jk})$.\\
+        $G_{ij}$ & Goal: persuade or correct other actors through communication and critique.\\
         \bottomrule
     \end{tabularx}
 \end{table}
 
-\begin{lemma}[Dual-network invalidation propagation]\label{lem:expected_equilibrium}
-    Let the proportion dynamics of Eqs.~\eqref{eq:dual-T}-\eqref{eq:dual-F} be
-    driven by parameters
-    \(\lambda_k,d_{jk},p_k,q_k\in(0,1)\).
-    Assume the per-actor falsehood-generation rate satisfies the consistency
-    condition
-    \begin{equation}\label{eq:lambda_constraint}
-    \lambda_k = d_{jk}\,
-                \frac{p_k}{p_k+q_k},
-    \end{equation}
-    which guarantees that the expected proportions sum to one.
-    Then the Markov process has the mean fixed point
-    \[
-        \pi_{F,k}^{*}
-        =\frac{\lambda_k}{d_{jk}},\qquad
-        \pi_{T,k}^{*}
-        =\frac{\lambda_k\,q_k}{d_{jk}\,p_k},
-        \qquad
-        \pi_{T,k}^{*}+\pi_{F,k}^{*}=1.
-    \]
+\begin{lemma}[Dual-network invalidation propagation]
+\label{lem:expected_equilibrium}
+Let a focal network have effective false-production parameter $a_k=p_k+\lambda_k$.
+With one external detector $N_j$, the cross-network equilibrium is
+\[
+\pi_{F,k}^{\mathrm{cross,rate}}
+=
+\frac{p_k+\lambda_k}{p_k+\lambda_k+q_k+d_{jk}}
+\]
+in the continuous-time hazard model, and
+\[
+\pi_{F,k}^{\mathrm{cross,disc}}
+=
+\frac{p_k+\lambda_k}{p_k+\lambda_k+1-(1-q_k)(1-d_{jk})}
+\]
+in the exact one-round Bernoulli model.  The corresponding true-state shares are
+$1-\pi_{F,k}^{\mathrm{cross,rate}}$ and
+$1-\pi_{F,k}^{\mathrm{cross,disc}}$.
 \end{lemma}
 
 \begin{proof}
-    At equilibrium the expected changes vanish,
-    so \(E[\Delta T_k]=E[\Delta F_k]=0\).
-    Using the distributional expectations 
-    % \[
-    % E[X_k]=n_k\lambda_k,
-    % E[Y_{jk}]=F_k d_{jk},
-    % E[Z_k]=T_k p_k,
-    % E[W_k]=F_k q_k,
-    % \]
-    \begin{align*}
-        E[X_k] &= \lambda_k \quad \text{(Poisson distribution)}, \\
-        E[Y_{jk}] &= F_k  d_{jk} \quad \text{(Binomial distribution)}, \\
-        E[Z_k] &= T_k  p_k \quad \text{(Binomial distribution)}, \\
-        E[W_k] &= F_k  q_k \quad \text{(Binomial distribution)},
-    \end{align*}
-    and dividing by \(n_k\) to convert counts to proportions gives
-    \begin{align}
-    \pi_{T,k} p_k &= \pi_{F,k} q_k, \label{eq:eq_true_prop}\\
-    \lambda_k     &= \pi_{F,k} d_{jk}
-                +\pi_{F,k} q_k
-                -\pi_{T,k} p_k. \label{eq:eq_false_prop}
-    \end{align}
-    Equation~\eqref{eq:eq_true_prop} yields
-    \(\pi_{F,k} = \pi_{T,k} p_k/q_k\).
-    Insert this into the normalization
-    \(\pi_{T,k}+\pi_{F,k}=1\) to obtain
-    \(\pi_{T,k}=q_k/(p_k+q_k)\) and
-    \(\pi_{F,k}=p_k/(p_k+q_k)\).
-    Finally, setting \(\pi_{F,k}= \lambda_k/d_{jk}\) from
-    \eqref{eq:eq_false_prop} gives the constraint
-    \eqref{eq:lambda_constraint} and the stated fixed point.
+In the continuous-time hazard model, apply the ODE branch of
+Lemma~\ref{lem:basic_invalidation} with $a=a_k$ and
+$b=b_k^{\mathrm{rate}}=q_k+d_{jk}$.  This branch allows arbitrary positive
+rates, so $q_k+d_{jk}$ need not be less than one.  In the exact one-round
+Bernoulli model, apply the discrete branch with $a=a_k$ and
+$b=b_k^{\mathrm{disc}}=1-(1-q_k)(1-d_{jk})$, assuming the resulting one-round
+probabilities are admissible.  Both substitutions give the displayed fixed
+points.
 \end{proof}
-
 
 \paragraph{Interpretation of Lemma~\ref{lem:expected_equilibrium}.}
-The equilibrium proportions reveal clear causal roles for each parameter.
-The false-statement share in network $N_k$ is
-\[
-\pi_{F,k}^{*}= \frac{\lambda_k}{d_{jk}},
-\]
-so it scales \emph{directly} with the per-actor error-generation rate
-$\lambda_k$ and \emph{inversely} with the cross-network detection
-probability $d_{jk}$.  More prolific error creation or weaker
-cross-scrutiny raises the long-run fraction of false statements.
+The cross-network equilibrium depends on the ratio of false-production pressure
+to total correction pressure.  Increasing $\lambda_k$ or $p_k$ raises the
+false-state share.  Increasing $q_k$ or $d_{jk}$ lowers it.  In the rate model,
+internal and external correction add linearly.  In the exact one-round Bernoulli
+model, their combined effect saturates below one, as probabilities must.
 
-The true-statement share is
-\[
-\pi_{T,k}^{*}= \pi_{F,k}^{*}\,\frac{q_k}{p_k}
-             = \frac{\lambda_k\,q_k}{d_{jk}\,p_k},
-\]
-hence it grows with the internal correction probability $q_k$ and falls
-with the internal corruption probability $p_k$.  A network that corrects
-errors efficiently ($q_k \uparrow$) or seldom corrupts truths
-($p_k \downarrow$) achieves a higher equilibrium truth proportion.
 
-Finally, Eq.~\eqref{eq:lambda_constraint} couples $\lambda_k$ to the flip
-parameters: if within-network corruption outpaces correction
-($p_k>q_k$), the consistency condition forces a higher $\lambda_k$,
-pushing $\pi_{F,k}^{*}$ upward unless the partner network compensates with
-stronger detection ($d_{jk} \uparrow$).  Thus the model quantifies an
-intuitive trade-off: falsehood prevalence is driven by the \emph{ratio} of
-error creation to error removal, internally via $(p_k,q_k)$ and externally
-via $d_{jk}$.
-
-%================================================
+%---------------------------------------
 \subsubsection{Single- vs.\ Cross-Network Models with Invalidation}
-%================================================
+\label{sec:single-cross-comparison}
+%---------------------------------------
 
-\paragraph{Stationary false-statement shares.}
-The \emph{single-network emergent-invalidation} model  
-(Lemma \ref{lem:single_lambda}) stabilizes at  
+For an isolated single network under the additive-rate convention,
+Lemma~\ref{lem:single_lambda} gives
 \[
-\pi_{F}^{\mathrm{single}}
-      =
-      \frac{p+\lambda}{p+\lambda+q},
+\pi_F^{\mathrm{single}}
+=
+\frac{p+\lambda}{p+\lambda+q},
 \qquad
-\pi_{T}^{\mathrm{single}}
-      =
-      \frac{q}{p+\lambda+q}.
+\pi_T^{\mathrm{single}}
+=
+\frac{q}{p+\lambda+q}.
 \]
-
-For a given network \(N_k\) engaged in \emph{cross-network detection}
-with partner \(N_j\) (Lemma \ref{lem:expected_equilibrium}) the
-corresponding steady state is  
+With one external detector, Lemma~\ref{lem:expected_equilibrium} gives
 \[
-\pi_{F}^{\mathrm{cross}}
-      =
-      \frac{\lambda}{d},
-\qquad
-\pi_{T}^{\mathrm{cross}}
-      =
-      \frac{\lambda\,q}{d\,p},
+\pi_F^{\mathrm{cross,rate}}
+=
+\frac{p+\lambda}{p+\lambda+q+d}
 \]
-where \(p,q,\lambda\) now abbreviate \(p_k,q_k,\lambda_k\) and
-\(d=d_{jk}\).
+in the continuous-time hazard model, and
+\[
+\pi_F^{\mathrm{cross,disc}}
+=
+\frac{p+\lambda}{p+\lambda+1-(1-q)(1-d)}
+\]
+in the exact one-round Bernoulli model.
 
-\medskip
-\noindent
-Here
-\begin{center}
-\renewcommand{\arraystretch}{1.1}
-\begin{tabular}{ll}
-\(p\) & intrinsic $r \to f$ flip probability in \(N_k\);\\
-\(q\) & intrinsic $f \to r$ flip probability in \(N_k\);\\
-\(\lambda\) & fabrication hazard per true statement in \(N_k\);\\
-\(d\) & probability a false statement in \(N_k\) is detected by \(N_j\).
-\end{tabular}
-\end{center}
-
-%------------------------------------------------
 \begin{lemma}[Cross-network detection lowers falsehood prevalence]
 \label{lem:cross_vs_single}
-If
+If $d>0$, then
 \[
-\frac{\lambda}{d}
-<
-\frac{p+\lambda}{p+\lambda+q},
+\pi_F^{\mathrm{cross,rate}}<\pi_F^{\mathrm{single}}
 \]
-then
-\(
-\pi_{F}^{\mathrm{cross}}
-<
-\pi_{F}^{\mathrm{single}},
-\)
-i.e.\ coupling \(N_k\) to an external detector \(N_j\) \emph{reduces} the
-steady-state prevalence of false statements.
+in the continuous-time hazard model, and
+\[
+\pi_F^{\mathrm{cross,disc}}<\pi_F^{\mathrm{single}}
+\]
+in the exact one-round Bernoulli model.
 \end{lemma}
 
 \begin{proof}
-Subtract the two stationary shares:
-\[
-\pi_{F}^{\mathrm{single}}
-      -
-\pi_{F}^{\mathrm{cross}}
-      =
-\frac{p+\lambda}{p+\lambda+q}
-      -
-\frac{\lambda}{d}
-      >0
-      \quad\Longleftrightarrow\quad
-\frac{\lambda}{d}
-<
-\frac{p+\lambda}{p+\lambda+q}.
-\]
+In the isolated model the correction parameter is $b=q$.  With one external
+detector, the correction parameter is $q+d>q$ in the rate model and
+$1-(1-q)(1-d)=q+d-qd>q$ in the exact Bernoulli model.  Since $a/(a+b)$ is
+strictly decreasing in $b$ for $a>0$, the result follows.
 \end{proof}
 
 \paragraph{Interpretation.}
-External scrutiny (\(d \uparrow\)) or lighter fabrication
-pressure (\(\lambda \downarrow\)) pushes invalidations in the cross-network system below the single-network benchmark.  Conversely, when
-\(\lambda/d \ge (p+\lambda)/(p+\lambda+q)\), fabrications outrun
-detections and the dual system sustains the same or a higher falsehood share than isolation.
+External scrutiny lowers the steady-state falsehood share by increasing the
+false-to-true correction pressure.  The improvement is monotone in $d$.  The
+continuous-time hazard model permits additive accumulation of rates, whereas the
+one-round Bernoulli model saturates because total correction probability cannot
+exceed one.
 
-%================================================
 \subsubsection{How Many Agents Guarantee a Target Falsehood Level?}
 \label{sec:agent-requirements}
-%================================================
+%------------------------------------------------
 
-\begin{lemma}[Effective correction hazard]
+Let $a=p+\lambda$ denote the effective false-production parameter of a focal
+network.  Suppose the focal network has internal correction parameter $q$ and is
+coupled to $n-1$ partner networks, each supplying external correction parameter
+$d$.
+
+\begin{lemma}[Effective correction: discrete probability versus continuous hazard]
 \label{lem:effective_hazard}
-Let a focal discursive network $N_k$ possess an internal ``false $\to$ true" correction hazard $q>0$, and let it be cross-linked to $n-1$ partner
-networks, each supplying an external correction hazard $d>0$.
-Assuming that (i) internal and external detections act independently, and
- (ii) every detection channel is memory-less (exponential), the waiting time $T$ until a false statement in $N_k$ is first corrected is
+The effective correction parameter is
 \[
-   T \sim \exp \bigl(q + (n-1)d\bigr).
+    b_n^{\mathrm{disc}}=1-(1-q)(1-d)^{n-1}
 \]
-Consequently, the \emph{effective} per-statement correction rate is
+in the exact one-round Bernoulli model, and
 \[
-   q_{\text{eff}}(n) = q + (n-1)d.
+    b_n^{\mathrm{rate}}=q+(n-1)d
 \]
+in the continuous-time hazard model.  The additive expression is exact for
+continuous-time rates and is the first-order small-probability approximation to
+the discrete expression.
 \end{lemma}
 
 \begin{proof}
-%\textbf{Internal vigilance.}  
-In the discrete model each false statement faces a single Bernoulli
-``self-repair" trial per period with probability $q$.  As the period length
-$\Delta t\to 0$, the Binomial\,$\to$\,Poisson limit converts this into a
-Poisson correction stream of rate $q$, i.e.\ an exponential clock
-$T_q \sim \exp(q)$.
-
-%\textbf{External vigilance.}  
-Each of the other $n-1$ networks contributes an independent Bernoulli trial
-with probability $d$ per period.  Taking the same limit gives $n-1$
-independent Poisson streams of rate $d$, or clocks
-$T^{(1)}_d,\dots,T^{(n-1)}_d\sim\text{i.i.d.\ }\exp(d)$.
-
-%\textbf{Aggregation.}  
-The total waiting time until any clock rings is the minimum
-\[
-   T = \min\{T_q,T^{(1)}_d,\dots,T^{(n-1)}_d\}.
-\]
-Because the minimum of independent exponentials is itself exponential
-with rate equal to the sum of the component rates, we obtain
-$T\sim\exp\bigl(q+(n-1)d\bigr)$ and hence
-$q_{\text{eff}}(n)=q+(n-1)d$.
+In one discrete round, all external agents miss the false statement with
+probability $(1-d)^{n-1}$, and the internal self-repair mechanism misses with
+probability $(1-q)$.  Therefore all channels miss with probability
+$(1-q)(1-d)^{n-1}$, giving
+$b_n^{\mathrm{disc}}=1-(1-q)(1-d)^{n-1}$.  In continuous time, the minimum of
+independent exponential clocks is exponential with rate equal to the sum of the
+component rates, so $b_n^{\mathrm{rate}}=q+(n-1)d$.
 \end{proof}
 
-
-
-\begin{lemma}[Agent requirement for a tolerance $\varepsilon$]
+\begin{proposition}[Agent requirement for a tolerance $\varepsilon$]
 \label{prop:n_agents}
-Let $\pi_f^{(n)}$ be the asymptotic proportion of false statements
-in $N_k$ when it is coupled to the other $n-1$ networks as above.
-Then
+Let $\varepsilon\in(0,1)$ and define
 \[
-\pi_f^{(n)}
-      =\frac{p+\lambda}{\,p+\lambda+q+(n-1)d\,}.
+    B_\varepsilon=a\left(\frac1\varepsilon-1\right).
 \]
-Consequently, to guarantee $\pi_f^{(n)}\le\varepsilon\in(0,1)$ one
-needs at least
+In the exact one-round Bernoulli model,
 \[
-n_{\min}
-    = 
-   \Bigl\lceil
-      1+\frac{(p+\lambda)\bigl(\tfrac1\varepsilon-1\bigr)-q}{d}
-   \Bigr\rceil
+    \pi_f^{(n),\mathrm{disc}}
+    =
+    \frac{a}{a+1-(1-q)(1-d)^{n-1}}.
 \]
-cross-detecting networks (agents).
-\end{lemma}
+The minimum number of coupled networks required to guarantee
+$\pi_f^{(n),\mathrm{disc}}\le\varepsilon$ is
+\[
+ n_{\min}^{\mathrm{disc}}
+ =
+ \begin{cases}
+ 1, & B_\varepsilon\le q,\\[4pt]
+ 1+\left\lceil
+ \dfrac{\log\left((1-B_\varepsilon)/(1-q)\right)}{\log(1-d)}
+ \right\rceil,
+ & q<B_\varepsilon<1,\\[12pt]
+ \text{unattainable by finite one-round Bernoulli detection}, & B_\varepsilon\ge1.
+ \end{cases}
+\]
+In the continuous-time hazard model,
+\[
+    \pi_f^{(n),\mathrm{rate}}
+    =
+    \frac{a}{a+q+(n-1)d},
+\]
+and
+\[
+    n_{\min}^{\mathrm{rate}}
+    =
+    \max\left\{1,
+    \left\lceil
+    1+\frac{a(1/\varepsilon-1)-q}{d}
+    \right\rceil
+    \right\}.
+\]
+\end{proposition}
 
 \begin{proof}
-%\textbf{Step 1.  Recall the single-network steady state.}  
-Per Lemma \ref{lem:single_lambda}, for one isolated network the long-run fraction of false statements is
+For the exact Bernoulli model, the discrete branch of Lemma~\ref{lem:basic_invalidation} gives the false-state fixed point $a/(a+b_n^{\mathrm{disc}})$.  For the continuous-time hazard model, the ODE branch gives $a/(a+b_n^{\mathrm{rate}})$ for any positive rates.  In the discrete
+case, $a/(a+b_n^{\mathrm{disc}})\le\varepsilon$ is equivalent to
+$b_n^{\mathrm{disc}}\ge B_\varepsilon$.  If $B_\varepsilon\le q$, the isolated
+network already meets the target.  If $q<B_\varepsilon<1$, solve
 \[
-   \pi_f^{\text{single}}
-     = 
-     \frac{p+\lambda}{\,p+\lambda+q\,}.
+1-(1-q)(1-d)^{n-1}\ge B_\varepsilon,
 \]
-Coupling $N_k$ to $n-1$ partner networks multiplies its ``false $\to$ true" correction hazard from $q$ to
-\(
-   q_{\text{eff}}(n)=q+(n-1)d,
-\)
-per Lemma \ref{lem:effective_hazard}. Substituting this into the single-network formula gives the new steady state
+which gives
 \[
-   \pi_f^{(n)}
-     =
-     \frac{p+\lambda}
-          {\,p+\lambda + q_{\text{eff}}(n)\,}
-     =
-     \frac{p+\lambda}
-          {\,p+\lambda + q + (n-1)d\,}.
+(1-d)^{n-1}\le\frac{1-B_\varepsilon}{1-q}.
 \]
-Impose the tolerance constraint $\pi_f^{(n)} \le \varepsilon$, 
-\[
-   \frac{p+\lambda}
-        {p+\lambda + q + (n-1)d}
-   \le
-   \varepsilon,
-   \qquad 0<\varepsilon<1.
-\]
-Solving the inequality for $n$ yields the desired result.
-% \begin{align*}
-%    \frac{p+\lambda}
-%         {p+\lambda + q + (n-1)d}
-%    &\le
-%    \varepsilon  \\[6pt]
-%    p+\lambda
-%    &\le
-%    \varepsilon\bigl(p+\lambda+q+(n-1)d\bigr) \\[6pt]
-%    p+\lambda
-%    &\le
-%    \varepsilon(p+\lambda+q) + \varepsilon(n-1)d \\[6pt]
-%    (p+\lambda)\,[1-\varepsilon]
-%      - \varepsilon q
-%    &\le
-%    \varepsilon(n-1)d \\[6pt]
-%    n-1
-%    &\ge
-%    \frac{(p+\lambda)\bigl(\tfrac{1}{\varepsilon}-1\bigr) - q}{d}.
-% \end{align*}
-% Isolate $n$ and round up to the nearest integer.
-% \[
-%    n
-%    \ge
-%    1
-%    +
-%    \frac{(p+\lambda)\bigl(\tfrac{1}{\varepsilon}-1\bigr) - q}{d},
-%    \qquad\Longrightarrow\qquad
-%    n_{\min}
-%    =
-%    \Bigl\lceil
-%       1+\frac{(p+\lambda)\bigl(\tfrac{1}{\varepsilon}-1\bigr)-q}{d}
-%    \Bigr\rceil.
-% \]
-The ceiling $\lceil\cdot\rceil$ is necessary because $n$ must be an integer.
+Since $\log(1-d)<0$, this yields the stated ceiling formula.  If
+$B_\varepsilon\ge1$, no finite number of one-round Bernoulli detectors can
+achieve the required correction probability.  The continuous-time formula is
+obtained by substituting $b_n^{\mathrm{rate}}=q+(n-1)d$ and solving the same
+inequality for $n$.
 \end{proof}
 
 \paragraph{Interpretation.}
-External scrutiny scales \emph{linearly} with the number of
-partner networks, while internal falsehood production stays
-fixed.  Thus $\pi_f^{(n)}$ decays hyperbolically in $n$,
-and each additional agent yields diminishing (but still positive),
-returns in truthfulness.
+The discrete and continuous formulas answer different engineering questions.
+The exact Bernoulli model describes one round in which each partner has bounded
+detection probability.  The continuous-time model describes independent
+detection clocks acting over time; rates can add without violating a one-round
+probability cap.  The notation in simulations and figures should state which
+regime is being used.
+
 
 %===============================================
 \subsection{FOO Algorithm with Integrity Verification}\label{sec:foo-algorithm}
 %===============================================
-The asymmetry between generation  difficulty and verification difficulty explored in Section~\ref{sec:verification-advantage} forms the theoretical foundation for our multi-agent approach: we harness the relative ease of critique to construct networks where mutual verification pushes system-wide error rates below what any individual model achieves.
+The asymmetry exploited by the FOO algorithm is the conditional verification
+channel of Theorem~\ref{thm:verification-channel}.  FOO couples an arbitrary
+ensemble of LLM agents, tool-using processes, human reviewers, or formal
+checkers to a critique-and-harmonization loop.  The algorithm reduces delivered
+invalidity when critics have positive sensitivity on non-common-mode errors,
+false-positive burden is acceptable, and flagged invalid outputs are repaired or
+rejected.  This framing connects FOO to debate, process supervision, verifier
+training, tool use, and mixture-of-agents architectures
+\parencite{irving2018debate,du2023multiagentdebate,cobbe2021trainingverifiers,lightman2023verify,schick2023toolformer,wang2024moa}.
 
-The \emph{Flaws-of-Others} (FOO) algorithm instantiates the detection hazard \(d\) of Lemma~\ref{lem:cross_vs_single} in software.  It couples an \emph{arbitrary} ensemble of LLM agents (each defined by a back-end model, decoding temperature, and free-text instructions) to a lightweight consensus loop (Algorithm~\ref{algo:foo-blockchain} and Fig.~\ref{fig:consensus-flow}).  The FOO algorithm achieves system-wide error reduction, even when individual agents remain fallible in generation.
-
-The FOO algorithm requires trust in the integrity of agent interactions.  In collaborative scientific work, the provenance of each contribution  becomes essential for reproducibility and accountability. We extend the  basic FOO protocol with cryptographic integrity verification.
+The FOO protocol also requires trust in the integrity of the interaction log. In
+collaborative scientific work, the provenance of each response, critique,
+harmonization decision, and revision becomes essential for reproducibility and
+accountability.  We therefore extend the basic protocol with tamper-evident
+logging based on signed hash links.
 
 %---------------------------------------
 \subsubsection{Core FOO Protocol}
@@ -1357,213 +1370,381 @@ truth-dominant regime predicted by the theory.
 % \end{algorithm}
 
 %---------------------------------------
-\subsubsection{Integrity Extension}\label{sec:blockchain}
+\subsubsection{Tamper-evident logging}
+\label{sec:blockchain}
 %---------------------------------------
 
-Each FOO interaction generates a cryptographically signed record containing: (i) Message content and timestamp, (ii) Agent identity and interaction type, (iii) Hash-based link to previous interactions, (iv) Verification signature
+Each FOO interaction can be recorded in a signed hash-linked log in the sense of
+Haber and Stornetta's time-stamping construction \parencite{haber1991timestamp}.
+This construction should be called a \emph{tamper-evident log}; it becomes a
+blockchain only if the implementation also specifies a distributed-consensus or
+external-anchoring mechanism.  Each entry has the form
+\[
+E_i=(m_i,t_i,\mathrm{id}_i,\sigma_i,h_i),
+\qquad
+h_i=H(h_{i-1}|m_i|t_i|\mathrm{id}_i|\sigma_i),
+\]
+where $H$ is a collision-resistant hash function such as SHA-256, and
+$\sigma_i$ is a digital signature, for example an EdDSA signature, over
+$(m_i,t_i,h_{i-1})$ under agent $\mathrm{id}_i$'s long-term signing key.
 
-This creates a tamper-evident chain where any modification to historical 
-interactions invalidates subsequent cryptographic links, making post-hoc 
-fabrication of contributions computationally infeasible.
+The log gives tamper evidence: changing an old entry changes every subsequent
+hash.  It also gives per-entry non-repudiation when signatures and key
+management are implemented correctly.  It does not by itself prevent an
+adversary who controls the storage substrate from rewriting the log forward from
+a modified entry and recomputing every later hash.  Stronger tamper resistance
+requires anchoring the current head $h_N$ to an external append-only medium,
+such as an RFC~3161 trusted time-stamping authority, a public-chain commitment,
+or a Byzantine-fault-tolerant consensus service \parencite{rfc3161,castro1999pbft}.
 
-%\paragraph{Integration with FOO protocol}
-The integrity logging adds four checkpoint types to Algorithm~\ref{algo:foo-blockchain}:
+The integrity layer adds four checkpoint types to Algorithm~\ref{algo:foo-blockchain}:
 \begin{enumerate}
-\item Initial response logging after broadcast
-\item Critique logging during cross-examination  
-\item Harmonization decision logging
-\item Revision logging during iteration
+\item initial response logging after broadcast,
+\item critique logging during cross-examination,
+\item harmonization-decision logging,
+\item revision logging during iteration.
 \end{enumerate}
-Detailed implementation algorithms and security analysis are provided 
-in Appendix~\ref{appendix:blockchain-implementation}.
+A security claim should specify the threat model: who holds signing keys, what
+happens if an agent key is compromised, whether timestamps are trusted, whether
+log heads are externally anchored, and whether the system promises only
+tamper-evidence or also tamper-resistance under a consensus protocol.
+
 
 %================================================
 \section{Theoretical Validation and Parameter Analysis}
 \label{sec:theoretical-validation}
 %================================================
 
-This section demonstrates the mathematical consistency and theoretical properties of our discursive network models. Rather than claiming empirical validation, we show how the framework accommodates realistic parameter ranges and produces theoretically coherent dynamics. The analysis serves three purposes: (i) establishing that the models yield stable, interpretable equilibria; (ii) demonstrating how parameter variations affect system behavior; and (iii) illustrating the framework's capacity to represent different invalidation regimes observed in the literature.
+This section illustrates the dynamics of the discursive-network
+model.  The purpose is not to claim empirical calibration of the latent hazards
+\(p,q,\lambda,d\).  Rather, the purpose is to verify internal consistency:
+the model should preserve the population simplex, converge to the fixed points
+proved in Section~\ref{sec:modeling}, and distinguish clearly between the exact
+one-round Bernoulli regime and the continuous-time rate regime.
 
-We parameterize our models using representative values drawn from the LLM literature to demonstrate theoretical consistency and explore regime transitions. Future work will require systematic parameter estimation from controlled experiments designed specifically to test the discursive network hypotheses.
+The literature cited below motivates the qualitative scale of the parameters,
+but it does not directly estimate them.  Reported hallucination rates,
+self-evaluation scores, process-supervision gains, and verifier-performance
+numbers are task-level outcomes under specific benchmarks; they are not
+plug-in estimates of the hazards in Lemmas~\ref{lem:basic_invalidation},
+\ref{lem:single_lambda}, and~\ref{lem:expected_equilibrium}.  Thus the values in
+Table~\ref{tab:param-calibration} should be read as an illustrative
+parameterization for a reproducible regime check.  A future empirical study
+should estimate these hazards directly from controlled experiments that
+separately measure false production, intrinsic correction, external detection,
+false-positive review burden, repair success, and common-mode blind spots.
 
 %------------------------------------------------
-\subsection{Parameter specification from literature ranges}
+\subsection{Illustrative parameter specification}
+\label{sec:illustrative-parameters}
 %------------------------------------------------
-Published studies provide parameter ranges that inform our theoretical analysis. \textcite{Ji2023SelfReflection} report invalidation rates of 26-61\% in medical domains, while \textcite{Zhang2024SelfAlignment} document self-evaluation accuracy near chance levels (AUROC $\approx$ 0.55). These findings suggest parameter regimes where $\lambda > q$, corresponding to invalidation-dominant dynamics in our framework:
 
+Published studies motivate an invalidation-dominant single-agent regime without
+directly determining the hazards.  Medical-domain evaluations and hallucination
+mitigation studies document that factual errors can remain substantial in
+specialized settings \parencite{sallam2023chatgpt,thirunavukarasu2023large,Ji2023SelfReflection},
+while \textcite{Zhang2024SelfAlignment} emphasize that intrinsic
+self-evaluation requires calibration and remains weak in some factuality
+settings.  Work on learned verifiers and process supervision shows that
+externalized checking can improve mathematical reasoning, but the gains depend
+on the verifier, the task, and the available evidence
+\parencite{cobbe2021trainingverifiers,lightman2023verify}.  Conversely,
+intrinsic self-correction without external feedback can fail or even degrade
+reasoning performance \parencite{huang2023cannotselfcorrect}.  These findings
+support exploring regimes in which single-agent error production exceeds
+intrinsic repair while cross-agent or tool-supported verification provides an
+additional correction channel.
+
+Table~\ref{tab:param-calibration} fixes one such regime.  We write
 \[
-\lambda > q \quad\Longrightarrow\quad \pi_f^{\text{single}} = \frac{p+\lambda}{p+\lambda+q} \gtrsim 0.50,
+    a := p+\lambda
 \]
-i.e.\ the model fabricates new errors faster than it repairs them
-internally, i.e. an \emph{invalidation-dominant} system. While we do not claim these studies directly measure our theoretical parameters, they establish the empirical plausibility of invalidation-dominant regimes and provide realistic bounds for theoretical exploration.
-
-%\paragraph{Calibration caveats.}
-The claim-level probabilities reported by \textcite{Zhang2024SelfAlignment}
-are raw soft-max scores.  They are \emph{over-confident} until
-calibrated (their Fig.~5), and they average dependent claims.
-Consequently we treat them as \emph{proxy scores}, not literal
-probabilities, and accompany every point estimate with an explicit
-uncertainty discussion in what follows.
-
-%------------------------------------------------
-\subsection{Parameter choices for simulation}
-%------------------------------------------------
-Table~\ref{tab:param-calibration} lists the hazards used in our
-single- and dual-network simulations.  Whenever a range was reported in
-the source, we chose values that place the single network near the
-mid-point of the error band (about 60 \% false statements) so that the
-effect of cross-network detection is easy to visualise.
-
-The following analysis explores model behavior under parameter values that span regimes of practical interest. We examine: (i) single-network dynamics with varying $\lambda/q$ ratios; (ii) cross-network detection effects as $d$ varies; and (iii) scaling behavior as the number of agents increases. This constitutes theoretical validation of model consistency rather than empirical hypothesis testing.
+for the effective true-to-false drift in the additive mean-field convention.
+For the numerical values below, \(a=0.075\).  If \(p\) and \(\lambda\) are
+instead interpreted as independent one-round Bernoulli channels, the exact
+combined drift is \(1-(1-p)(1-\lambda)=0.0739\); the difference is
+\(p\lambda=0.0011\).  The figures use the additive convention so that they
+match the closed-form expressions in the preceding lemmas.
 
 \begin{table}[htbp]
     \centering
     \setlength{\tabcolsep}{5pt}
-    \renewcommand{\arraystretch}{1.1}
-\caption{Representative parameter values for theoretical analysis. 
-         Parameters are chosen to demonstrate key regime transitions 
-         and explore model behavior within empirically plausible ranges. 
-         Values do not constitute fitted parameters but rather 
-         theoretically motivated choices for mathematical exploration.}
+    \renewcommand{\arraystretch}{1.15}
+    \caption{Illustrative parameter values for the corrected dynamics.
+    The values are chosen to display the qualitative regimes of the theory;
+    they are not fitted estimates.  The same numerical value \(d=0.19\) is used
+    as a one-round Bernoulli detection probability in the Monte-Carlo plots and
+    as a continuous-time rate in the analytic rate curve; those are separate
+    interpretations used for comparison.}
     \label{tab:param-calibration}
     \begin{tabularx}{\linewidth}{@{}lclX@{}}
         \toprule
-        Symbol & Value & Model role & Empirical hook / comment \\
+        Symbol & Value & Model role & Interpretation in this section \\
         \midrule
-        $p$   & $0.02$  & true $\to$ false slip &
-            Chosen an order of magnitude smaller than $q$ so that
-            internal repair remains visible. \\[2pt]
-        $q$   & $0.05$  & internal repair &
-            Matches \textsc{self-eval}'s modest AUROC $\approx0.55$. \\[2pt]
-        $\lambda$ & $0.055$ & invalidations &
-            Upper half of the 26-61 \% error band implies $\lambda>q$;
-            solving $\pi_f^{\text{single}}\approx0.60$ for $\lambda$
-            with $p,q$ fixed gives $0.055$. \\[2pt]
-        $d$   & $0.19$  & cross-network repair &
-            Picked so that $\lambda/d < p/(p+q)$, just inside the
-            truth-dominant region; see
-            Lemma~\ref{lem:cross_vs_single}. \\
+        \(p\) & \(0.02\) & intrinsic true-to-false drift &
+        Small background slippage from valid to invalid state. \\[2pt]
+        \(q\) & \(0.05\) & intrinsic false-to-true repair &
+        Modest self-repair, reflecting that intrinsic self-evaluation is
+        useful but unreliable without external evidence. \\[2pt]
+        \(\lambda\) & \(0.055\) & additional false-production drift &
+        Chosen with \(p,q\) so that the isolated network has false equilibrium
+        \(f_{\mathrm{single}}^*=0.60\), an invalidation-dominant baseline. \\[2pt]
+        \(d\) & \(0.19\) & per-peer external detection/correction &
+        Chosen to illustrate a positive verification channel: one external
+        peer lowers the false equilibrium to approximately \(0.24\), and a
+        nine-agent continuous-rate system falls below a \(5\%\) target. \\
         \bottomrule
     \end{tabularx}
 \end{table}
 
 %------------------------------------------------
-\subsection{Single-network baseline}
+\subsection{Analytic consistency checks}
+\label{sec:analytic-consistency-checks}
 %------------------------------------------------
-With the calibrated triple $(p,q,\lambda)$ the single-network model
-(Lemma~\ref{lem:single_lambda}) predicts
+
+The corrected two-state dynamics aggregate false production into \(a\) and
+false correction into \(b\).  In the exact one-round Bernoulli model,
 \[
-\pi_f^{\text{single}}
-      =
-      \frac{0.02+0.055}{0.02+0.055+0.05}
-      =0.60,
-\qquad
-\pi_r^{\text{single}} = 0.40.
+    f_{t+1}=a+(1-a-b)f_t,
+    \qquad
+    f^*=\frac{a}{a+b}.
 \]
-A Monte-Carlo experiment
-(\texttt{FOO\_Single\_Network.py}, $20$ runs, $100$ steps) produces
-$\hat\pi_f(100)=0.597\pm0.018$.
-
-\paragraph{Interpretation.}
-When \(\lambda>q\) the false share stabilises near 60 \%, squarely inside
-the empirical band of \citeauthor{Ji2023SelfReflection}.  This baseline
-serves as the reference against which we gauge cross-network effects.
-
-%------------------------------------------------
-\subsection{Dual-network architecture}
-%------------------------------------------------
-Coupling two identical networks via an external repair hazard $d$
-(Lemma~\ref{lem:cross_vs_single}) yields
+In the continuous-time rate model,
 \[
-\pi_f^{\text{cross}}
-      =\frac{\lambda}{d}=0.29,
-\qquad
-\pi_r^{\text{cross}} =0.71 ,
+    \dot f=a(1-f)-bf,
+    \qquad
+    f^*=\frac{a}{a+b}.
 \]
-i.e.\ the falsehood prevalence is cut roughly in half.  Simulations
-($20$ runs, $100$ steps) give
-$\hat\pi_f^{N_1}(100)=0.213\pm0.015$ and
-$\hat\pi_f^{N_2}(100)=0.290\pm0.014$ 
-(Fig.~\ref{fig:single-vs-dual}b).
+The same equilibrium formula appears in both branches, but the admissible
+interpretation of \(b\) differs.  In the Bernoulli branch \(b\le 1\) is a
+probability.  In the rate branch \(b\) can exceed \(1\), because it is a hazard
+rate in the differential equation rather than an entry of a stochastic matrix.
 
-\paragraph{Interpretation.}
-The external hazard $d$ can be realized by retrieval-augmented
-generation, ensemble adjudication, or human post-editing.  Once the ratio
-\(\lambda/d\) drops below \(p/(p+q)\) the system flips from an
-invalidation-dominant regime (\(\pi_f\approx0.60\)) to a truth-dominant
-one (\(\pi_f\approx0.29\)), a \textbf{51 \%} relative reduction.
+For the isolated network, \(b=q=0.05\).  Hence
+\[
+    f_{\mathrm{single}}^*
+    =
+    \frac{p+\lambda}{p+\lambda+q}
+    =
+    \frac{0.075}{0.125}
+    =
+    0.60,
+    \qquad
+    r_{\mathrm{single}}^*=0.40.
+\]
+The isolated network is therefore invalidation-dominant in this illustrative
+regime.
+
+For one external peer, the two interpretations are close but not identical.
+The continuous-rate or small-probability approximation uses
+\[
+    b_{\mathrm{cross,rate}}=q+d=0.24,
+    \qquad
+    f_{\mathrm{cross,rate}}^*
+    =
+    \frac{0.075}{0.075+0.05+0.19}
+    \approx 0.2381.
+\]
+The exact one-round Bernoulli model combines intrinsic and external correction
+as independent chances to detect the same false statement:
+\[
+    b_{\mathrm{cross,disc}}
+    =
+    1-(1-q)(1-d)
+    =
+    1-(0.95)(0.81)
+    =
+    0.2305,
+\]
+so that
+\[
+    f_{\mathrm{cross,disc}}^*
+    =
+    \frac{0.075}{0.075+0.2305}
+    \approx 0.2455.
+\]
+Both values are substantially below the isolated value \(0.60\).  The exact
+Bernoulli Monte-Carlo simulation in Figure~\ref{fig:single-vs-dual} uses
+\(b_{\mathrm{cross,disc}}\); the continuous-rate value is reported as the
+corresponding ODE approximation.
+
+%------------------------------------------------
+\subsection{Simulation protocol}
+\label{sec:simulation-protocol}
+%------------------------------------------------
+
+The finite-population simulations use the stochastic update that corresponds
+directly to the corrected two-state recursion.  Let \(N\) be the number of
+claims or actors being tracked in a network and let \(F_t\) denote the number
+in the invalid state at step \(t\).  Given \(F_t\), define
+\[
+    X_t \sim \operatorname{Binomial}(N-F_t,a),
+    \qquad
+    C_t \sim \operatorname{Binomial}(F_t,b),
+\]
+where \(X_t\) is the number of valid items that become invalid and \(C_t\) is
+the number of invalid items corrected.  The update is
+\[
+    F_{t+1}=F_t+X_t-C_t,
+    \qquad
+    T_{t+1}=N-F_{t+1}.
+\]
+This construction preserves \(T_t+F_t=N\) exactly for every sample path.
+For the single-network figure, \(b=q\).  For the two-network figure, each false
+item survives a round only if it escapes both intrinsic repair and the external
+peer, so
+\[
+    b=1-(1-q)(1-d).
+\]
+The plotted confidence bands are pointwise \(95\%\) Monte-Carlo intervals over
+independent runs.  The accompanying script
+\texttt{FOO\_generate\_plots.py} uses \(N=1000\), \(1000\) runs, \(100\) update
+steps, and a fixed random seed by default.  It writes vector PDF files for the
+paper and high-resolution PNG files for quick inspection.
 
 \begin{figure}[htbp]
     \centering
     %----------------- panel (a) -----------------%
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{FOO_Single-Network.png}
-        \caption{}   % only label ``(a)"; keep text for the global caption
+        \includegraphics[width=\linewidth]{FOO_Single-Network}
+        \caption{}
         \label{fig:single-net}
     \end{subfigure}
     \hfill
     %----------------- panel (b) -----------------%
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
-        \includegraphics[width=\linewidth]{FOO_Dual-Network.png}
-        \caption{}   % label ``(b)"
+        \includegraphics[width=\linewidth]{FOO_Dual-Network}
+        \caption{}
         \label{fig:dual-net}
     \end{subfigure}
 
-    \caption{%
-    \textbf{(a)}~\emph{Single-network emergent-invalidation dynamics} corresponding to Lemma~\ref{lem:single_lambda}. Twenty independent Monte-Carlo runs of $100$ steps are averaged. The blue curve shows the mean proportion $\pi_r(t)$ of actors endorsing the true statement $r$; the red curve shows the mean proportion $\pi_f(t)=1-\pi_r(t)$ endorsing the false statement $f$. Shaded bands mark point-wise $95\,\%$ confidence intervals. Dashed horizontal lines denote the fixed points $\pi_r^{*}$ and $\pi_f^{*}$ computed for $p=0.02$, $q=0.05$, and $\lambda=0.055$. 
-    \medskip 
-    \\ \phantom{.} 
-    \textbf{(b)}~\emph{Cross-network invalidation-detection dynamics} corresponding to Lemma~\ref{lem:expected_equilibrium}. The hazards $p$, $q$, and $\lambda$ are unchanged, and an external detection probability $d=0.19$ links two equal networks (Lemma~\ref{lem:expected_equilibrium}).  Curves and bands represent the mean and $95\,\%$ confidence interval over $20$ runs of $100$ steps; the upper subplot corresponds to Network~1 and the lower to Network~2. Dashed lines indicate the predicted equilibria  $\pi_{T,k}^{*}$ (true, blue) and $\pi_{F,k}^{*}$ (false, red), which reduce the long-run false share from about $0.60$ in panel~(a) to about $0.29$ and $0.21$.}
+    \caption{\textbf{(a)} Single-network two-state dynamics with
+    \(a=p+\lambda=0.075\) and \(b=q=0.05\).  The trajectories converge to
+    \(f_{\mathrm{single}}^*=0.60\) and \(r_{\mathrm{single}}^*=0.40\), as
+    predicted by Lemma~\ref{lem:single_lambda}.
+    \textbf{(b)} Two identical networks with one external detection channel.
+    The simulation uses the exact Bernoulli correction probability
+    \(b=1-(1-q)(1-d)=0.2305\), so both networks converge to the same false
+    equilibrium \(f_{\mathrm{cross,disc}}^*\approx0.2455\).  Any persistent
+    asymmetry between two identical networks would indicate non-equilibration,
+    a code--equation mismatch, or a different implemented update rule.}
     \label{fig:single-vs-dual}
 \end{figure}
 
+%------------------------------------------------
+\subsection{Agent count under Bernoulli and rate regimes}
+\label{sec:agent-count-parameters}
+%------------------------------------------------
 
-%------------------------------------------------
-\subsection{How many independent agents for error $\leq\varepsilon$?}
-%------------------------------------------------
+For \(n\) agents, the exact one-round Bernoulli correction probability is
+\[
+    b_n^{\mathrm{disc}}
+    =
+    1-(1-q)(1-d)^{n-1},
+\]
+whereas the continuous-time rate model uses
+\[
+    b_n^{\mathrm{rate}}
+    =
+    q+(n-1)d.
+\]
+The two formulas agree to first order when \(q\) and \(d\) are small, but they
+differ qualitatively for large \(n\).  The Bernoulli correction probability is
+capped by \(1\); the rate \(q+(n-1)d\) is unbounded because it is the total
+hazard of independent exponential clocks.
+
+For a target false share \(\varepsilon=0.05\), the equilibrium condition
+\(f^*=a/(a+b)\le\varepsilon\) is equivalent to
+\[
+    b \ge a\left(\frac{1}{\varepsilon}-1\right).
+\]
+With \(a=0.075\),
+\[
+    a\left(\frac{1}{0.05}-1\right)=0.075(19)=1.425.
+\]
+No one-round Bernoulli system can achieve this target under the illustrative
+parameters, because \(b_n^{\mathrm{disc}}\le 1\) for every \(n\).  Its limiting
+false share is
+\[
+    \lim_{n\to\infty}
+    \frac{a}{a+b_n^{\mathrm{disc}}}
+    =
+    \frac{0.075}{0.075+1}
+    \approx0.0698
+    >
+    0.05.
+\]
+Thus the exact Bernoulli model has a nonzero floor above the chosen tolerance.
+
+The continuous-rate model gives a different design calculation:
+\[
+    f_n^{\mathrm{rate}}
+    =
+    \frac{a}{a+q+(n-1)d}.
+\]
+Solving \(f_n^{\mathrm{rate}}\le0.05\) yields
+\[
+    n_{\min}^{\mathrm{rate}}
+    =
+    \left\lceil
+    1+\frac{a(1/0.05-1)-q}{d}
+    \right\rceil
+    =
+    \left\lceil
+    1+\frac{1.425-0.05}{0.19}
+    \right\rceil
+    =
+    9.
+\]
+Indeed,
+\[
+    f_8^{\mathrm{rate}}\approx0.0515>0.05,
+    \qquad
+    f_9^{\mathrm{rate}}\approx0.0456<0.05.
+\]
+The statement ``nine agents suffice'' is therefore a statement about the
+continuous-time additive-hazard model, not about exact one-round Bernoulli
+detection.
+
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.7\linewidth]{FOO_Agent_Count.png}
-    \caption{%
-        \emph{Long‐run false share vs.\ number of agents.} 
-        The orange curve shows the analytic steady-state falsehood share
-        $\pi_f(n)=\bigl(p+\lambda\bigr) \bigl[p+\lambda+q+(n-1)d\bigr]^{-1}$
-        for the calibrated hazards
-        $(p,q,\lambda,d)=(0.02,\,0.05,\,0.055,\,0.19)$.
-        Each dot marks an integer~$n$; the dashed horizontal line is the
-        5\,\% target.  
-        The first point below that line occurs at
-        $n_{\min}=9$, labelled in green, meaning at least nine
-        mutually detecting agents are required (under this calibration)
-        to keep the long-run error rate below one false statement in
-        twenty.}
+    \includegraphics[width=0.74\linewidth]{FOO_Agent_Count}
+    \caption{Long-run false share as a function of the number of agents.
+    The exact Bernoulli curve uses
+    \(b_n^{\mathrm{disc}}=1-(1-q)(1-d)^{n-1}\) and approaches the floor
+    \(0.075/(0.075+1)\approx0.0698\), which remains above the \(5\%\) target.
+    The continuous-rate curve uses
+    \(b_n^{\mathrm{rate}}=q+(n-1)d\) and crosses the \(5\%\) target at
+    \(n=9\).  The figure therefore displays two different regimes, not two
+    simulations of the same stochastic matrix.}
     \label{fig:agent-count}
 \end{figure}
 
-Using Proposition~\ref{prop:n_agents} we can ask:  
-\emph{How many cross-detecting networks are required to push the
-long-run false share below \(\varepsilon = 5\,\%\)?}  With the parameters of
-Table~\ref{tab:param-calibration} and tolerance \(\varepsilon=0.05\),
+%------------------------------------------------
+\subsection{Interpretation}
+\label{sec:parameter-interpretation}
+%------------------------------------------------
 
-\[
-n_{\min}
-      =
-      \Bigl\lceil
-      1+\frac{(p+\lambda)\bigl(\tfrac1{0.05}-1\bigr)-q}{d}
-      \Bigr\rceil
-      =
-      \bigl\lceil 8.24 \bigr\rceil
-      =9 .
-\]
+The numerical lesson is that external verification can strongly reduce the
+false equilibrium, but the strength of the conclusion depends on the correction
+regime.  A single external peer lowers the illustrative false share from
+\(0.60\) to about \(0.24\).  However, the exact one-round Bernoulli model still
+has a probability cap; under the chosen values it cannot reach a \(5\%\) target
+no matter how many same-strength one-round detectors are added.  The
+continuous-time model reaches that target with nine agents because independent
+exponential correction hazards add without a probability cap.
 
-Hence, in this example, arbitrarily choosing $\varepsilon = 5\,\%$, at least nine mutually detecting agents are necessary to
-guarantee that fewer than one statement in twenty remains false at
-equilibrium under this calibration.  The requirement grows only
-\emph{linearly} in \(1/\varepsilon\) thanks to the additive nature of the
-external hazards, making multi-agent verification a scalable pathway to
-high factual reliability. Figure \ref{fig:agent-count} shows the functional dependency between  $\varepsilon$ and $n$. 
+Accordingly, these plots should be described as consistency checks and regime
+illustrations.  They do not by themselves validate the hazards empirically.  A
+research-quality empirical validation would need to estimate \(p,q,\lambda,d\)
+and, for the verification-channel theorem, \((\delta_m,\eta_m,c,\rho)\) from
+task-specific experiments.  The figures generated by
+\texttt{FOO\_generate\_plots.py} are reproducibility artifacts for the corrected
+mathematics: equations, code, and captions all implement the same two-state
+model.
+
 
 %================================================
 \section{Discussion}\label{sec:discussion}
@@ -1666,7 +1847,7 @@ production, verification, and revision of scientific knowledge.
 
 Many ethical challenges in discursive networks call  for detailed, tamper-proof logs of interactions. This is essential for  accountability, reproducibility, and auditability in digital systems. When interactions involve LLMs, scientific collaborations, or complex data workflows, the capacity to verify the integrity of recorded exchanges becomes a prerequisite for trust. One approach to achieving this is through the use of blockchain technology, which can provide decentralized, cryptographically secure records that are resistant to unauthorized modification. Each entry in a blockchain-based log is linked to the previous one through cryptographic hashes, ensuring that any tampering with earlier data invalidates the entire subsequent chain. This structure allows, in principle, interaction logs to be both transparent and verifiable without central oversight. Furthermore, incorporating time-stamping and access control into such systems ensures that each interaction is both temporally fixed and attributable. These properties make blockchain a viable framework for securing interaction logs in research, legal compliance, and automated decision-making contexts.
 
-%Elaborate: However, in practice it is possible to fool a blockchain cryptographic system becasue... are for future research
+%Elaborate: However, in practice it is possible to fool a blockchain cryptographic system becasue... area for future research
 
 This study deliberately replaces the fashionable term
 \emph{hallucination} with the broader concept of
@@ -1737,7 +1918,17 @@ model quantifies these trade-offs: for any target false-statement
 tolerance one can compute a required detection rate, and thus budget the
 amount of human or automated scrutiny that must be applied.
 
-Just as people are quicker to spot another person's mistakes than their own, a language model is often a sharper critic of a peer's text than of its own output.  The asymmetry stems from each model's training objective: during generation it maximises local fluency rather than global factuality, so a well-phrased falsehood slips through unchallenged.  When the same model is asked only to evaluate an already-written passage, fluency is no longer the bottleneck; the task collapses to checking claims against the knowledge stored in its training corpus.  Verification is therefore easier, and cross-model review can expose errors that the original authoring pass left intact.
+Just as people are often quicker to spot another person's mistakes than their
+own, language-model systems can sometimes be more useful as critics of a peer's
+text than as unchecked authors.  The mathematical claim, however, is conditional
+rather than universal.  Cross-model review helps when the reviewer has access to
+a validity signal that the authoring pass did not use: external evidence,
+retrieval, tools, formal constraints, process supervision, independent prompts,
+or genuinely diverse model families.  It can fail when all agents share the same
+blind spot.  The FOO architecture therefore treats critique not as a magical
+property of LLMs but as an engineered verification channel whose sensitivity,
+false-positive rate, repair probability, and common-mode dependence must be
+estimated.
 
 The significance of these findings extends beyond artificial systems.
 Invalidation dynamics of the same mathematical form could govern human
@@ -1803,6 +1994,22 @@ This manuscript and its supplementary materials were produced using methods deta
 \newpage
 \appendix
 \section{Blockchain Implementation Details}\label{appendix:blockchain-implementation}. 
+
+\subsection{Anchoring options for the FOO audit log}
+\label{app:anchoring}
+
+A signed hash-linked log is tamper-evident only relative to a trusted copy of
+the log head.  There are three standard ways to create such a reference point.
+A trusted time-stamping authority can issue an RFC~3161 time-stamp token
+asserting that the current head hash existed at a specified time
+\parencite{rfc3161}.  A public-chain anchoring service can periodically commit a
+Merkle root containing FOO log heads to a public ledger; this outsources
+append-only evidence to the ledger's consensus mechanism.  Finally, an
+organization can maintain the log head through a Byzantine-fault-tolerant
+replication protocol such as PBFT, thereby tolerating a bounded number of faulty
+or malicious replicas \parencite{castro1999pbft}.  Without one of these
+anchoring mechanisms, a local hash chain should be described as tamper-evident
+under comparison to a stored head, not as tamper-proof.
 
 \paragraph{Implementation note.}
 We implement the loop in \texttt{Python~3.11} with \texttt{asyncio} concurrency; each agent call is an HTTP request to a hosted LLM endpoint (e.g.\ OpenAI, Anthropic).   Neither the number of agents nor their prompts are fixed: both are read at run time from a simple JSON configuration, so the same engine can mediate anything from a two-model A/B test to a dozen specialized critics.  Unless stated otherwise, the experimental pool comprises a single \emph{harmonizer} (the most capable model available) and, for \emph{each} back-end engine under test, two specialist agents sampled at temperatures~0.1 and~0.9.  The protocol executes one broadcast round plus a minimum of three consensus rounds, so every query triggers

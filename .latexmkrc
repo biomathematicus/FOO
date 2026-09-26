@@ -1,4 +1,3 @@
-# Force biber for this project only
-$bibtex_use = 2;          # 2 = use biber
-$biber      = 'biber %O %B';
-$bibtex     = $biber;     # alias for safety
+# Force bibtex for this project (natbib + \bibliography{...}, not biblatex)
+$bibtex_use = 2;          # 2 = always run bibtex even without \citation in .aux
+$bibtex     = 'bibtex %O %B';

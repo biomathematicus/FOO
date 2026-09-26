@@ -1,4 +1,5 @@
 .venv/*
+remediation/*
 
 ## Core latex/pdflatex auxiliary files:
 *.aux

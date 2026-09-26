@@ -24,6 +24,12 @@
 \bibliographystyle{unsrtnat}
 
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\hypersetup{
+    pdftitle={Ethics of AI Agents in Biomedical Data Science},
+    pdfauthor={Juan B. Guti\'errez},
+    pdfsubject={Responsible Conduct of Research; AI Agents; Biomedical Data Science},
+    pdfkeywords={AI agents; invalidation; multi-agent critique; biomedical data science; research integrity}
+}
 
 %% ===== Custom Commands =====
 \newcommand{\DAIR}{DAIR$^3$}
@@ -33,9 +39,9 @@
 A Framework for Responsible Use of LLM-Based Agentic Systems}
 
 \author{
-Juan B. Guti\'errez$^{1,*}$ \\[6pt]
-\small $^{1}$Department of Mathematics, University of Texas at San Antonio, San Antonio, TX, USA \\
-\small $^{*}$Corresponding author: juan.gutierrez3@utsa.edu
+Juan B. Guti\'errez \\[6pt]
+\small Department of Mathematics, University of Texas at San Antonio, San Antonio, TX, USA\footnote{\small\copyright 2026 Juan B. Gutiérrez -- juan.gutierrez3@utsa.edu
+} 
 }
 
 \date{\today}
@@ -46,33 +52,225 @@ Juan B. Guti\'errez$^{1,*}$ \\[6pt]
 \maketitle
 
 \begin{abstract}
-Large language model (LLM) based AI agents are increasingly deployed in biomedical data science to assist with literature review, code generation, data analysis, and manuscript preparation. Unlike single-turn chatbot interactions, agentic workflows involve planning, tool use, persistent memory, and multi-agent coordination, substantially expanding the ethical surface area of AI-assisted research. This article presents a comprehensive framework for the responsible use of AI agents in biomedical contexts, grounded in two foundational concepts. First, we introduce \emph{invalidation} as a broader and more actionable concept than ``hallucination,'' encompassing factual, logical, normative, and structural breaches of constraints. Second, we examine multi-agent critique architectures (such as ``flaws-of-others'' loops) that can reduce invalidation rates while introducing new ethical tradeoffs involving privacy, compute burden, and epistemic homogenization. We map seven categories of ethical risk: epistemic propagation, accountability and authorship, provenance and reproducibility, confidentiality, bias and fairness, security, and sustainability. For each category, we provide concrete mitigation strategies aligned with Responsible Conduct of Research (RCR) principles and current publication ethics guidance from COPE, ICMJE, and WAME. We conclude with a governance-by-design checklist and disclosure templates suitable for immediate adoption in biomedical research workflows.
+Large language model (LLM) based AI agents are increasingly deployed in biomedical data science to assist with literature review, code generation, data analysis, and manuscript preparation. Unlike single-turn chatbot interactions, agentic workflows involve planning, tool use, persistent memory, and multi-agent coordination, substantially expanding the ethical surface area of AI-assisted research. This article presents a comprehensive framework for the responsible use of AI agents in biomedical contexts. The framework rests on a positional metaethics: ethical commitments are defended through public justification rather than derived from empirical measurement. Four such commitments organize the argument: non-delegable human accountability, structural verification, sociodemographic categories treated as historically constructed rather than as stable natural kinds, and multi-agent critique as conditional rather than magical. From this grounding the framework develops two foundational concepts. First, we introduce \emph{invalidation} as a broader and more actionable concept than ``hallucination,'' encompassing factual, logical, normative, and structural breaches of constraints. Second, we examine multi-agent critique architectures (such as ``flaws-of-others'' loops) that can reduce invalidation rates while introducing new ethical tradeoffs involving privacy, compute burden, and epistemic homogenization. We map seven categories of ethical risk: epistemic propagation, accountability and authorship, provenance and reproducibility, confidentiality, bias and fairness, security, and sustainability. For each category, we provide concrete mitigation strategies aligned with Responsible Conduct of Research (RCR) principles and current publication ethics guidance from COPE, ICMJE, and WAME. We conclude with a governance-by-design checklist and disclosure templates suitable for immediate adoption in biomedical research workflows.
 \end{abstract}
 
 \noindent\textbf{Keywords:} AI agents; research integrity; invalidation; hallucination; provenance; confidentiality; authorship; bias; sustainability; biomedical data science; responsible conduct of research
 
 \section{Introduction}
+\label{sec:introduction}
 
-The integration of artificial intelligence into biomedical research has accelerated dramatically with the emergence of large language models (LLMs) capable of generating fluent text, writing functional code, and engaging in complex reasoning tasks \cite{thirunavukarasu2023,singhal2023}. While initial deployments focused on single-turn interactions through chat interfaces, the field has rapidly evolved toward \emph{agentic} systems: LLM-based workflows that can plan multi-step tasks, invoke external tools, maintain memory across interactions, and coordinate with other agents to accomplish complex objectives \cite{wang2024survey,xi2023rise}.
+\subsection{Two kinds of claim about the world}
+\label{sec:intro:knowledge-belief}
 
-This transition from chatbot to agent represents more than a technical advancement; it constitutes a fundamental shift in the relationship between researchers and AI systems. When a researcher queries a chatbot about statistical methods, the interaction is bounded and easily auditable. When an agentic system autonomously retrieves literature, generates analysis code, executes that code on sensitive data, and drafts results text, the ethical considerations multiply along each step of the workflow. The agent becomes a participant in a \emph{discursive network} where statements can propagate, mutate, and acquire authority even when incorrect \cite{gutierrez2025}.
+A scientist can weigh a cup. Place it on a calibrated scale, record
+the reading, repeat. Any careful observer reaches the same value within
+a known tolerance, and the uncertainty itself is measurable. A scientist
+cannot weigh a deity. One may affirm or deny such a claim, but it does
+not become reproducibly adjudicable by adding more decimal places. The
+boundary that separates these two cases runs not between science and
+religion or between technical and non-technical subjects, but between
+claims that admit public, reproducible procedures of correction and
+claims that depend on a position one occupies. In a biomedical workflow
+this takes concrete form: a cohort count, a code execution, and a cited
+reference can each be checked against a protocol or a source; whether
+an observed privacy risk is acceptable for a secondary-use study cannot,
+and requires defensible commitments about consent, equity, and
+accountability.
 
-Biomedical data science presents particularly acute challenges for agentic AI. The field operates under stringent requirements for data privacy (especially concerning protected health information), research reproducibility, and scientific integrity. Errors in biomedical analyses can have downstream consequences for clinical decision-making, public health policy, and individual patient care. The responsible conduct of research (RCR) framework that governs biomedical science must therefore be extended to address the novel risks introduced by agentic workflows.
+For the purposes of biomedical data-science practice, empirical
+knowledge will mean claims made accountable to reproducible procedures
+of measurement, computation, or audit. Measurement so understood is
+not value-free, but it is intersubjectively checkable; a normative
+claim is not, though it is adopted, defended, and made binding through
+institutions. Hume drew this line in \emph{A Treatise of Human Nature}
+(1739--1740): one cannot derive an ``ought'' from an ``is'' without
+smuggling in a premise that no observation supplies
+\cite{hume1739treatise}. Moore's ``naturalistic
+fallacy'' in \emph{Principia Ethica} (1903) gave the gap a name and an
+argument: any attempt to define a moral predicate in purely natural
+terms leaves an open question that the definition cannot close
+\cite{moore1903principia}. Hume and Moore establish the non-reduction
+of normative judgment to empirical description. They do not by
+themselves settle whether normative claims can have universal validity.
+The positional stance defended below is an additional metaethical
+commitment, introduced in Section~\ref{sec:intro:positionality}.
 
-This article provides such an extension. We develop a comprehensive ethical framework for AI agent use in biomedical data science, organized around two foundational concepts and seven risk categories. The framework is designed to be actionable: we provide concrete mitigation strategies, governance checklists, and disclosure templates that researchers can adopt immediately.
+\subsection{Kant's two questions, in biomedical terms}
+\label{sec:intro:kant}
+
+Kant adds a related but distinct move. The \emph{Critique of Pure Reason}
+\cite{kant1781critique} asks under what conditions theoretical knowledge
+is possible. The \emph{Critique of Practical Reason} \cite{kant1788practical}
+asks how practical reason can guide action through what Kant calls the
+``moral law.'' Kant himself defends the universality of that moral law
+and is not a positionalist. The present manuscript draws on Kant only
+to distinguish modes of justification: empirical claims require
+reproducible evidential procedures, whereas normative claims require
+defensible practical commitments. Both modes are unavoidable in
+biomedical research.
+
+This distinction structures the taxonomy of invalidation that
+Section~\ref{sec:invalidation} develops. Factual and structural
+invalidations belong primarily to the domain of what can be checked
+by procedure: a fabricated citation can be tested against a publisher's
+resolver, and a malformed schema can be validated against a contract.
+Normative invalidation belongs primarily to the domain of what ought
+to be done: an output may be factually accurate yet impermissible
+because it exposes protected health information, reinforces
+stigmatizing categories, or violates a data-use agreement. Logical
+invalidation polices the bridge between the two, identifying invalid
+inferences by which descriptive findings are made to support practical
+conclusions they do not warrant.
+
+\subsection{Positionality without naive relativism}
+\label{sec:intro:positionality}
+
+If normative claims do not admit reproducible adjudication, where do
+they come from? The metaethical stance adopted here is
+\emph{practical positionality}: ethical commitments are articulated
+from within institutions, histories, communities, and material
+conditions, and they remain open to public justification and ongoing
+critique. Haraway \cite{haraway1988situated} names the alternative
+the ``god-trick'': the pretense of a view from nowhere that delivers
+values without a knower. Agentic AI systems often present outputs as
+if generated from nowhere; they have not. Every output bears the marks
+of training data, vendor incentives, and the position of the institution
+deploying the system.
+
+Positionality is not naive relativism. Williams \cite{williams1985ethics}
+distinguishes two questions an ethics may be asked to answer: whether
+values can be argued for, and whether they have universal warrant.
+The stance adopted here answers yes to the first and abstains on the
+second. The authority of biomedical research values in practice comes
+through public justification, institutional adoption, legal force, and
+ongoing critique. The research community already operates this way:
+informed consent and conflict-of-interest disclosure are positional
+commitments adopted, debated, and made binding through professional
+codes and statute.
+
+Contemporary AI-ethics literature offers competing attempts to
+operationalize values under technical and institutional constraints.
+Floridi and colleagues \cite{floridi2018ai4people} propose the
+\emph{AI4People} framework of five principles; Mittelstadt and
+colleagues \cite{mittelstadt2016ethics} earlier mapped the ethics of
+algorithms across distinct types of concern; Whittlestone and colleagues
+\cite{whittlestone2019role} argue that principle lists, read as
+context-free axioms, conceal the tensions among them. Bender and
+colleagues \cite{bender2021} foreground training-data biases,
+scale-induced harms, and the labor and environmental costs of large
+language models; Crawford \cite{crawford2021atlas} situates AI within
+political economy and planetary extraction; Birhane
+\cite{birhane2021algorithmic} argues that algorithmic injustice requires
+relational, contextual ethics; and Vallor \cite{vallor2016technology}
+defends a virtue-ethics approach that locates values in cultivated
+dispositions rather than in axioms. These accounts converge on the
+practical point that technical systems carry social commitments even
+when their interfaces make those commitments invisible.
+
+\subsection{Regulation as the operational form of positional values}
+\label{sec:intro:regulation}
+
+Positional values become binding through governance, which operates at
+different levels of authority. The U.S. NIST AI Risk Management
+Framework \cite{nist_rmf} is voluntary risk-management
+guidance. The European Union Artificial Intelligence Act
+\cite{eu_aiact} is binding risk-based regulation with
+extraterritorial reach. The UNESCO Recommendation on the Ethics of
+Artificial Intelligence \cite{unesco_ai} is a global
+standard-setting instrument grounded in human-rights commitments
+and applied to member states through national implementation. The
+OECD Council Recommendation on Artificial Intelligence
+\cite{oecd_ai} comprises intergovernmental principles
+adopted in 2019 and updated in 2024. Their differences are not
+defects to be eliminated by a better benchmark. Each is a serious
+attempt to specify which harms matter, which actors bear
+responsibility, and which forms of evidence count for trustworthy AI.
+The choice among them, and the choice of how to operationalize them
+in a specific research workflow, is itself a value choice.
+
+\subsection{The positional commitments of this manuscript}
+\label{sec:intro:commitments}
+
+The manuscript adopts four positional commitments as starting points,
+stated here so the reader meets the metaethics before the technical
+content, and defended in what follows.
+
+First, \emph{human accountability for AI-assisted research is
+non-delegable}. Agents are tools, not co-bearers of responsibility.
+The International Committee of Medical Journal Editors
+\cite{icmje_ai}, the Committee on Publication Ethics
+\cite{cope_ai}, and the World Association of Medical Editors
+\cite{wame2023} converge on the position that AI tools cannot
+meet the authorship criterion of accountability; the National
+Institutes of Health applies the same logic to peer review
+\cite{nih_ai_peerreview}.
+
+Second, \emph{verification is structural rather than optional}.
+Factual claims, generated code, retrieved citations, and statistical
+interpretations require planned checks rather than post-hoc
+reassurance. The discursive-network framework
+\cite{gutierrez2025} provides the scaffolding for what
+verification means when agents produce statements that propagate
+through manuscripts, code repositories, and the published record.
+
+Third, \emph{sociodemographic categories used in biomedical data are
+unstable across time and place and require explicit definition,
+provenance, and sensitivity analysis rather than assumed comparability}.
+The 2024 revision of U.S. Office of Management and Budget Statistical
+Policy Directive No.~15 \cite{omb2024spd15} is the most recent reminder
+that even federal categories of race and ethnicity are historically
+constructed rather than stable natural kinds.
+
+Fourth, \emph{multi-agent critique is conditional rather than magical}.
+Under stated conditions it can reduce some classes of invalidation
+\cite{gutierrez2025}, but it can also amplify privacy
+exposure across services, propagate correlated errors across model
+families, and produce a false sense of consensus.
+
+These four are positional values: defensible, but not universal
+warrants.
+
+\subsection{Contributions and roadmap}
+\label{sec:intro:contributions}
+
+The shift from single-turn chatbot interaction to agentic systems
+(workflows that plan multi-step tasks, invoke external tools, maintain
+memory across interactions, and coordinate with other agents
+\cite{thirunavukarasu2023,singhal2023,wang2024survey,xi2023rise})
+multiplies the ethical surface of AI-assisted research. When an
+agentic system autonomously retrieves literature, generates analysis
+code, executes that code on sensitive data, and drafts results text,
+the four positional commitments above engage at every step. The agent
+becomes a participant in a \emph{discursive network} where statements
+can propagate, mutate, and acquire authority even when incorrect
+\cite{gutierrez2025}. The remainder of the manuscript develops the
+framework needed to operationalize the commitments under those
+conditions.
 
 Our contributions are as follows:
 \begin{enumerate}[leftmargin=*]
-    \item We introduce \emph{invalidation} as a conceptual framework broader than ``hallucination,'' distinguishing factual, logical, normative, and structural breaches and explaining why this taxonomy matters for research integrity.
-    
-    \item We analyze the ethical tradeoffs of multi-agent critique architectures, demonstrating how verification loops can reduce invalidation while introducing new risks.
-    
+    \item We extend the invalidation framework of Guti\'errez \cite{gutierrez2025} from three categories (factual, logical, structural) to four by adding normative invalidation, and explain why this taxonomy matters for research integrity.
+
+    \item We analyze the ethical tradeoffs of multi-agent critique architectures, demonstrating how verification loops can reduce invalidation while introducing new risks of privacy amplification, compute burden, and epistemic homogenization.
+
     \item We present a systematic risk map covering seven categories of ethical concern specific to agentic workflows in biomedical contexts.
-    
-    \item We provide governance-by-design principles, including a practical checklist and disclosure templates aligned with current publication ethics standards.
+
+    \item We provide governance-by-design principles, including a practical checklist and disclosure templates aligned with current publication ethics standards \cite{cope_ai,icmje_ai,wame2023}.
 \end{enumerate}
 
-The article is structured as follows. Section~\ref{sec:background} provides background on AI agents and the discursive network framework. Section~\ref{sec:invalidation} develops the concept of invalidation. Section~\ref{sec:multiagent} analyzes multi-agent critique architectures. Section~\ref{sec:risks} presents the seven-category risk map. Section~\ref{sec:governance} offers governance principles and practical tools. Section~\ref{sec:discussion} discusses implications and limitations. Section~\ref{sec:conclusion} concludes.
+The article is structured as follows. Section~\ref{sec:background}
+formalizes the agentic-AI landscape in which the four commitments must
+operate, drawing on the recent surveys of \cite{park2023},
+\cite{wang2024survey}, and \cite{xi2023rise}, and on the discursive-network
+framework of \cite{gutierrez2025}. Section~\ref{sec:invalidation}
+develops the invalidation taxonomy. Section~\ref{sec:multiagent}
+analyzes multi-agent critique architectures. Section~\ref{sec:risks}
+presents the seven-category risk map. Section~\ref{sec:governance}
+offers governance principles and practical tools.
+Section~\ref{sec:workflow} traces an end-to-end illustrative workflow.
+Section~\ref{sec:discussion} discusses implications and limitations.
+Section~\ref{sec:conclusion} concludes.
 
 \section{Background: AI Agents and Discursive Networks}
 \label{sec:background}
@@ -95,7 +293,11 @@ This definition encompasses a spectrum of systems, from relatively simple tool-a
 
 Recent surveys have documented the rapid proliferation of agent architectures \cite{wang2024survey,xi2023rise,guo2024large}. Agents have been applied to software engineering, scientific research, data analysis, and administrative tasks. In biomedical contexts, agents are being deployed for literature triage, clinical note summarization, statistical code generation, and even elements of peer review assistance \cite{thirunavukarasu2023}.
 
+An AI agent in the sense used in this article is an LLM-centered system that exhibits at minimum planning, tool use, and memory. Multi-agent interaction extends the architecture and adds a distinct ethical surface, addressed separately in Section~\ref{sec:multiagent}.
+
 \subsection{The Discursive Network Framework}
+
+The discursive network framework, drawn from recent work on the circulation of statements in human-AI communication systems, treats a research workflow as a graph in which statements move among nodes (humans, AI systems, documents). The framework makes explicit a property usually left implicit in discussions of AI hallucination: an inaccurate statement, once entered into the workflow, has effects that depend not only on its accuracy but on how it propagates. Three of those propagation properties are operationally important for agent ethics and are summarized below.
 
 Our ethical analysis draws on the \emph{discursive network} framework developed by Guti\'errez \cite{gutierrez2025}. In this framework, communication systems are modeled as networks in which statements (propositions, claims, data) circulate among nodes (humans, AI systems, documents, databases). Statements can be generated, transmitted, transformed, and stabilized as they move through the network.
 
@@ -144,7 +346,7 @@ The term ``hallucination'' has become standard in discussions of LLM reliability
 
 \subsection{A Taxonomy of Invalidation}
 
-Following Guti\'errez \cite{gutierrez2025}, we propose \textbf{invalidation} as a broader concept: the breach of any constraint (factual, logical, normative, or structural) that a statement or output should satisfy. This framing emphasizes that validity is always relative to a set of requirements, and that different requirements apply in different contexts.
+Building on the invalidation framework of Guti\'errez \cite{gutierrez2025}, which identifies factual, logical, and structural breaches, we extend the taxonomy to include a fourth category, \textbf{normative invalidation}, which captures breaches of ethical, legal, or policy requirements. The full four-type taxonomy is more complete for biomedical contexts, where regulatory and ethical constraints carry as much weight as factual accuracy. This framing emphasizes that validity is always relative to a set of requirements, and that different requirements apply in different contexts.
 
 We distinguish four types of invalidation:
 
@@ -158,6 +360,8 @@ We distinguish four types of invalidation:
 
 This taxonomy is not exhaustive, and the categories can overlap. A fabricated citation (factual invalidation) might also violate publication ethics (normative invalidation). Nevertheless, the taxonomy provides a more complete vocabulary for identifying and addressing agent failures.
 
+When a single failure can be classified as more than one type of invalidation, classify it by the type of constraint that fails first in the verification workflow appropriate to the output. A fabricated citation fails the factual constraint (the cited paper does not exist) before any normative constraint engages, and is therefore classified as factual. A correctly cited but contextually inappropriate paper that mischaracterizes a vulnerable population fails the normative constraint and is classified as normative. This rule does not deny the multi-type nature of the failure; it identifies the most actionable verification target.
+
 \subsection{Implications for Research Integrity}
 
 The invalidation framework has direct implications for research integrity:
@@ -170,16 +374,28 @@ The invalidation framework has direct implications for research integrity:
     \item \textbf{Invalidation rates vary by task and domain.} Biomedical content may have different invalidation profiles than other domains due to specialized terminology, complex causal relationships, and stringent regulatory requirements.
 \end{enumerate}
 
-The mathematical framework in Guti\'errez \cite{gutierrez2025} demonstrates that some level of invalidation is statistically inevitable in LLM generation, particularly for complex tasks. The ethical imperative is therefore not to eliminate invalidation (which may be infeasible) but to detect, bound, and mitigate its propagation through research workflows.
+The mathematical framework in Guti\'errez \cite{gutierrez2025} argues that invalidation should be treated as a structural risk in complex LLM-mediated workflows: under stated model assumptions, a residual error rate is unavoidable. Whether a specific task, architecture, or domain reaches a given empirical invalidation rate remains an empirical question. The ethical imperative is therefore not to eliminate invalidation (which the framework argues is generally infeasible) but to detect, bound, and mitigate its propagation through research workflows.
 
 \section{Multi-Agent Critique: Benefits and Tradeoffs}
 \label{sec:multiagent}
 
 \subsection{The Verification Advantage}
 
-A key insight from research on LLM reliability is that \emph{verification is often easier than generation} for these models \cite{gutierrez2025,manakul2023}. An LLM that generates a false claim may nevertheless recognize that claim as false when asked to evaluate it critically. This asymmetry motivates architectures in which multiple agents review each other's outputs.
+A key insight from research on LLM reliability is that \emph{verification is often easier than generation} in this class of models \cite{Saunders2022,Madaan2023}. An LLM that generates a false claim may nevertheless recognize that claim as false when asked to evaluate it critically. This asymmetry motivates architectures in which multiple agents review each other's outputs.
 
-The ``flaws-of-others'' (FOO) pattern provides a structured approach \cite{gutierrez2025}. In this architecture, multiple agents independently produce outputs for a task; each agent then critiques the outputs of the others; a harmonizing agent synthesizes the critiques and produces a refined result. Empirical studies suggest that such cross-critique can substantially reduce invalidation rates, particularly for factual and logical errors.
+The ``flaws-of-others'' (FOO) pattern provides a structured approach \cite{gutierrez2025}. In this architecture, multiple agents independently produce outputs for a task; each agent then critiques the outputs of the others; a harmonizing agent synthesizes the critiques and produces a refined result. Empirical studies of multi-agent debate and self-critique architectures \cite{DuMultiagent2023,Liang2023Divergent} report reductions in factual and reasoning errors relative to single-model baselines, with magnitudes that vary by task, model family, and prompt design. The effect should therefore be treated as a useful but not guaranteed verification gain.
+
+For instructional and operational use, the discursive-network framework of \cite{gutierrez2025} yields a closed-form expression for the steady-state share of false statements with $n$ mutually detecting agents:
+\begin{equation}
+    \pi_F^{(n)} = \frac{p}{p + q + (n-1)d},
+    \label{eq:steadystate}
+\end{equation}
+where $p$ is the per-agent invalidation rate, $q$ is the self-repair rate, and $d$ is the cross-detection probability. Setting $\pi_F^{(n)} \leq \varepsilon$ and solving for $n$ gives the minimum number of agents required to reach a target error tolerance:
+\begin{equation}
+    n_{\min} = \left\lceil 1 + \frac{p\!\left(\dfrac{1}{\varepsilon} - 1\right) - q}{d} \right\rceil.
+    \label{eq:nmin}
+\end{equation}
+The reference values $q = 0.05$ and $d = 0.19$ from \cite{gutierrez2025} are appropriate starting points for biomedical workflows; both should be re-estimated for a given task and ensemble before being relied upon for quantitative agent-count decisions.
 
 \subsection{Ethical Tradeoffs of Multi-Agent Architectures}
 
@@ -224,11 +440,12 @@ This section presents a systematic map of ethical risks in agentic biomedical wo
     \item Implement retrieval-augmented verification: before accepting factual claims, retrieve supporting evidence from trusted sources.
     \item Establish a verification budget: define which output categories require independent verification, by whom, and using what methods.
     \item Maintain skepticism proportional to stakes: claims destined for publication require more stringent verification than internal working notes.
+    \item Sampling-based self-consistency methods such as SelfCheckGPT \cite{manakul2023} provide a cheap pre-screen for factual inconsistencies that can be applied before more expensive multi-agent critique.
 \end{itemize}
 
 \subsection{Accountability and Authorship}
 
-\paragraph{Concern.} The discursive network framework identifies \textbf{scientific epithesis}: claiming authorship or intellectual credit after only superficial engagement with agent-produced content \cite{gutierrez2025}. This concern connects to longstanding debates about honorary and gift authorship \cite{marusic2011}. Current publication ethics guidance is clear that AI tools cannot be authors because they cannot take accountability for research integrity \cite{cope_ai,icmje_authorship,icmje_ai,wame2023}.
+\paragraph{Concern.} The discursive network framework identifies a failure mode it calls \emph{scientific epithesis}, defined as claiming authorship or intellectual credit after only superficial engagement with agent-produced content \cite{gutierrez2025}. This concern connects to longstanding debates about honorary and gift authorship \cite{marusic2011}. Current publication ethics guidance is clear that AI tools cannot be authors because they cannot take accountability for research integrity \cite{cope_ai,icmje_authorship,icmje_ai,wame2023}.
 
 \paragraph{Examples.} A researcher uses an agent to draft an entire methods section, makes only cosmetic edits, but claims full authorship. A team lists an agent as a ``contributor'' without clarifying the nature of its role.
 
@@ -239,6 +456,25 @@ This section presents a systematic map of ethical risks in agentic biomedical wo
     \item Include human accountability statements for all agent-assisted work: ``[Author names] take full responsibility for the accuracy and integrity of this work.''
     \item Ensure that every claim in the final output has been reviewed and affirmed by a responsible human.
 \end{itemize}
+
+\begin{table}[h]
+\centering
+\caption{Common scenarios in AI-assisted scholarly work and their required actions.}
+\label{tab:authorship-scenarios}
+\small
+\begin{tabular}{p{4.6cm} p{3.6cm} p{5.4cm}}
+\toprule
+\textbf{Scenario} & \textbf{Acceptability} & \textbf{Required action} \\
+\midrule
+Grammar or style polishing on author-drafted text & Usually acceptable & Disclose if the journal or policy requires; otherwise no further action. \\
+AI drafts a paragraph; human verifies, rewrites, and integrates & Acceptable with disclosure & Disclose tool, task, and verification procedure; retain contribution log. \\
+AI writes substantive methods or results; human lightly edits & High risk & Major human re-analysis and rewrite; verify every claim against source; itemize contributions; consider whether the methods are truly the authors' own work. \\
+AI fabricates citations or numbers & Unacceptable & Reject output; audit the full bibliography or analysis; record the failure in the invalidation log. \\
+AI listed as author or co-author & Unacceptable under COPE/ICMJE/WAME \cite{cope_ai,icmje_authorship,icmje_ai,wame2023} & Remove AI from authorship; disclose use in methods or acknowledgments. \\
+Human claims authorship without intellectual contribution & Unacceptable; constitutes scientific epithesis & Reassign credit; document contributions; do not submit. \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Provenance, Auditability, and Reproducibility}
 
@@ -252,22 +488,26 @@ This section presents a systematic map of ethical risks in agentic biomedical wo
     \item Store exact prompts and configurations alongside code, seeds, and environment metadata.
     \item Define handoff points where a human must review and approve outputs before external release.
     \item Treat agent workflows with the same versioning discipline applied to code: tag releases, document changes, preserve history.
+    \item Record exact model identifiers including snapshot or version strings (e.g., \texttt{gpt-4-0613}, \texttt{claude-3-5-sonnet-20241022}), not only family names. Where reproducibility is essential and the vendor publishes deprecation timelines, preserve the agent output alongside the prompt so that the workflow can be reconstructed after the underlying model is retired.
 \end{itemize}
 
 \subsection{Confidentiality and Privacy}
 
-\paragraph{Concern.} Agent systems can inadvertently leak sensitive content through prompts, memory stores, tool calls, or outputs. Protected health information (PHI), unpublished research, and confidential peer review materials all require protection. Federal agencies have issued explicit guidance prohibiting the use of generative AI in peer review contexts \cite{nih_ai_peerreview,nsf_ai_notice}.
+\paragraph{Concern.} Sensitive content can leak from agent workflows through several distinct channels: direct transmission to a third-party service at inference time, retention in prompts, logs, memory stores, vector embeddings, or tool-call payloads, and, separately, through model memorization that may surface in later outputs. Membership inference and training-data extraction studies \cite{shokri2017,carlini2021} establish that trained models can leak information from their training corpora under some conditions; this is a separate mechanism from the immediate operational risk of pasting protected health information (PHI) or unpublished material into a prompt. Biomedical workflows must address all three channels. Federal agencies have issued explicit guidance prohibiting the use of generative AI in peer review contexts \cite{nih_ai_peerreview,nsf_ai_notice}.
 
 \paragraph{Examples.} A researcher pastes patient identifiers into an agent prompt for help with data cleaning. A grant reviewer uploads proposal text to a commercial LLM to help draft critiques. An agent's memory retains sensitive information from a previous session.
 
 \paragraph{Mitigations.}
 \begin{itemize}[leftmargin=*]
-    \item Never upload PHI, unpublished proposals, or confidential peer-review text to unapproved systems.
-    \item Practice data minimization: redact identifiers, use synthetic examples, summarize rather than paste raw records.
-    \item Prefer institutionally managed models or secure enclaves for sensitive workflows.
-    \item Understand memory persistence: clear agent state between sessions involving different sensitivity levels.
-    \item Review and comply with all applicable data use agreements and IRB protocols.
+    \item Never submit PHI, unpublished proposals, or confidential peer-review text to any system not approved by the institution for that data class. Where HIPAA applies, require a Business Associate Agreement (BAA) with the vendor.
+    \item Classify data before prompting: public, internal, unpublished, controlled-access, PII, PHI, genomic, tribal or Indigenous, proprietary, peer-review confidential. Match the data class to an approved system before any agent interaction.
+    \item Practice data minimization: redact identifiers using either HIPAA Safe Harbor or Expert Determination \cite{HHS2012Deidentification}; use synthetic or surrogate examples; summarize rather than paste raw records.
+    \item Treat memory stores, tool outputs, logs, and embeddings as governed data repositories subject to the same retention and access-control rules as the underlying data.
+    \item Clear agent state between sessions of different sensitivity levels and verify that vendor retention policies match the data class.
+    \item Verify compliance with applicable IRB protocols, data use agreements (DUAs), the NIH Data Management and Sharing Policy (NOT-OD-21-013) \cite{NIH2020DMSP}, and federal peer-review confidentiality rules before initiating an agent workflow on regulated data.
 \end{itemize}
+
+\textbf{Policy-sensitive boundary.} Using AI to prepare one's own grant or manuscript is distinct from using AI to review confidential materials. NIH (NOT-OD-23-149) prohibits NIH scientific peer reviewers from using natural-language processors, large language models, or other generative AI to analyze or formulate peer-review critiques for grant applications and R\&D contract proposals. NSF prohibits uploading any content from proposals, review information, or related records to non-approved generative AI tools. Both policies turn on confidentiality; both predate ongoing agency-level revisions; always consult the current agency notice, the signed reviewer agreement, and institutional policy before any AI use in peer review.
 
 \subsection{Bias and Fairness}
 
@@ -283,6 +523,8 @@ This section presents a systematic map of ethical risks in agentic biomedical wo
     \item Document assumptions about target populations and verify that agent outputs are appropriate for those populations.
 \end{itemize}
 
+\textbf{Biomedical illustration.} Consider an agent that proposes a prediction model using prior healthcare utilization as a proxy for disease burden. The proxy encodes access-to-care inequities: groups with structurally lower access generate fewer utilization events at any given level of disease burden. A model trained on this proxy will systematically underestimate disease in those groups, an artifact of measurement, not biology. The mitigation requires testing subgroup calibration and performance, documenting the assumption that motivated the proxy, and either substituting a less biased target or correcting for differential measurement. Obermeyer et al.~\cite{obermeyer2019} document this pattern in a deployed clinical algorithm.
+
 \subsection{Security and Adversarial Manipulation}
 
 \paragraph{Concern.} Agents that browse, retrieve, or execute tools are exposed to adversarial inputs. Prompt injection attacks can cause agents to deviate from intended behavior \cite{greshake2023,perez2022}. Tool-using agents create new attack surfaces (e.g., malicious instructions embedded in retrieved content) \cite{wallace2019}.
@@ -290,16 +532,18 @@ This section presents a systematic map of ethical risks in agentic biomedical wo
 \paragraph{Examples.} An agent retrieves a web page containing hidden instructions that override the researcher's prompt. An agent executes code from an untrusted source, compromising the research environment. An adversary crafts inputs designed to cause the agent to leak sensitive information.
 
 \paragraph{Mitigations.}
-\begin{itemize}[leftmargin=*]
-    \item Sandbox tools: apply least-privilege permissions, restrict network access, limit file system scope.
-    \item Separate retrieval from execution: require human approval before agents act on retrieved content.
-    \item Maintain allowlists for external resources; implement content filtering for retrieved text.
-    \item Monitor for anomalous agent behavior; establish kill switches for runaway processes.
-\end{itemize}
+\begin{enumerate}[leftmargin=*]
+    \item Separate read, reason, and act privileges. Retrieval agents should not execute code or send messages.
+    \item Apply least-privilege tool scopes. Default to read-only file access; no network egress unless explicitly approved; no production credentials in agent context.
+    \item Require human approval gates before agents execute code, write files, query databases, send communications, or call external APIs on non-trivial scopes.
+    \item Sandbox execution in disposable containers with limited filesystem and no uncontrolled network egress. Treat any code retrieved or generated by the agent as untrusted until reviewed.
+    \item Screen retrieved content. Treat web pages, PDFs, repository files, and emails as untrusted inputs that may contain instructions targeting the agent.
+    \item Log prompts, outputs, tool calls, model identifiers, environment metadata, and human approvals. Pin package versions and prefer institutional registries when handling sensitive data.
+\end{enumerate}
 
 \subsection{Sustainability and Equity}
 
-\paragraph{Concern.} Multi-agent critique workflows can scale quadratically in compute requirements. The environmental costs of large-scale AI inference are nontrivial \cite{strubell2019,patterson2021}. When best practices require extensive verification pipelines, resource constraints can create inequities: well-funded labs can afford thorough verification while resource-limited researchers cannot.
+\paragraph{Concern.} Multi-agent critique workflows impose a compute, latency, and energy burden that grows with ensemble size. In the all-pairs configuration, a workflow with $n$ agents requires approximately $n$ generation passes and $n(n-1)$ critique passes plus a final harmonization pass; the dominant term is quadratic in $n$. Architectures that prune to star or hierarchical configurations reduce critique passes to linear in $n$ at the cost of redundancy in detection. Training-cost studies \cite{strubell2019,patterson2021} motivate the broader sustainability concern, but inference-specific estimates should be used when making quantitative claims. When best practices require extensive verification pipelines, resource constraints can create inequities: well-funded labs can afford thorough verification while resource-limited researchers cannot.
 
 \paragraph{Examples.} A research protocol calls for seven-agent cross-critique on all outputs, making the workflow prohibitively expensive for many groups. A lab in a low-resource setting must choose between thorough verification and operational feasibility.
 
@@ -352,6 +596,8 @@ Before deploying agents in a biomedical workflow, researchers should confirm:
     \item \textbf{Sustainability:} Is the verification overhead justified for the risk level? Has compute cost been considered?
 \end{enumerate}
 
+An expanded version of this checklist, with detailed questions for each category, is provided in Appendix~\ref{app:checklist}.
+
 \subsection{Disclosure Template}
 
 For manuscripts and other formal outputs, we recommend a disclosure statement of the following form:
@@ -360,7 +606,24 @@ For manuscripts and other formal outputs, we recommend a disclosure statement of
 \textit{We used AI-assisted tools [specify names and versions] for [specify tasks: e.g., literature search, code generation, language editing, summarization]. All outputs were reviewed and verified by the authors, who take full responsibility for the accuracy, integrity, and originality of the work and for compliance with all applicable data governance and ethical requirements.}
 \end{quote}
 
-This template can be adapted to specific journal requirements and expanded to include additional detail as appropriate.
+This template can be adapted to specific journal requirements and expanded to include additional detail as appropriate. Appendix~\ref{app:disclosure} provides three sample disclosure statements calibrated to different levels of agent involvement.
+
+\section{An Illustrative Workflow}
+\label{sec:workflow}
+
+To make the framework concrete, we trace one analytical task end-to-end. The task is a literature triage for a county-level study of underweight birth rates in Texas using historical National Center for Health Statistics (NCHS) natality data. The workflow uses two agents: a retrieval agent that searches the published literature, and an analysis agent that drafts a summary memo. Both agents are tool-using LLMs operating under the governance protocol described in Section~\ref{sec:governance}.
+
+\paragraph{Factual invalidation, detected and corrected.} The retrieval agent returned a paragraph citing a 2019 paper that does not exist. Verification step: every DOI in the agent output was checked against the publisher's resolver before any text was retained. The fabricated citation was removed; the bibliography was audited for additional fabrications and one further was found.
+
+\paragraph{Logical invalidation, detected and corrected.} The analysis agent drafted a sentence asserting that the underweight birth rate was significantly higher in a county after a stated odds ratio. The odds ratio was for the maternal age covariate, not the county effect. Verification step: every statistical claim in the draft was traced to its source table. The sentence was rewritten.
+
+\paragraph{Normative invalidation, detected and corrected.} The analysis agent drafted a sentence describing racial disparities in birth outcomes as ``intrinsic to the population.'' Verification step: a normative review by a human author replaced the framing with social-determinants language consistent with the published literature on racism as a structural cause of disparate outcomes.
+
+\paragraph{Structural invalidation, detected and corrected.} The analysis agent produced a CSV summary in which the column order did not match the schema of the downstream visualization tool. Verification step: schema validation on the CSV failed at the boundary, and the agent was prompted to regenerate the file in the correct order.
+
+\paragraph{Final disclosure.} The disclosure statement for the resulting memo follows the template in Appendix~\ref{app:disclosure} and itemizes the verification procedures applied at each stage.
+
+This single workflow illustrates all four invalidation types and the corresponding verification strategies. In practice, not every workflow surfaces every type; documenting which types did not appear is itself a useful component of the invalidation log.
 
 \section{Discussion}
 \label{sec:discussion}
@@ -394,7 +657,7 @@ Several directions merit further investigation:
     \item Empirical studies of invalidation rates across biomedical tasks and agent architectures.
     \item Investigation of techniques for detecting and mitigating bias in multi-agent consensus.
     \item Integration of agent ethics training into biomedical research curricula and RCR programs.
-    \item Regulatory frameworks specific to agent-assisted clinical research and healthcare applications \cite{fda_aiml,meskó2023}.
+    \item Regulatory frameworks specific to agent-assisted clinical research and healthcare applications \cite{fda_aiml,mesko2023}.
 \end{itemize}
 
 \section{Conclusion}
@@ -408,7 +671,7 @@ The core message is not that agents should be avoided, but that they should be u
 
 \section*{Acknowledgments}
 
-This work was supported in part by NIH R25 grant [grant number]. The author thanks the \DAIR{} program faculty and trainees for discussions that informed this framework.
+This work was supported in part by NIH NIGMS award 5R25GM151182. The author thanks the \DAIR{} program faculty and trainees for discussions that informed this framework.
 
 \section*{Competing Interests}
 
@@ -478,13 +741,13 @@ Is the verification overhead proportionate to risk? Has compute cost been estima
 \subsection{Standard Disclosure (Moderate Agent Involvement)}
 
 \begin{quote}
-\textit{We used AI-assisted tools ([tool names and versions]) for [tasks: literature search, initial code drafting, language editing]. All outputs were reviewed, verified, and revised by the authors, who take full responsibility for the accuracy and integrity of the work.}
+\textit{We used GPT-4 (\texttt{gpt-4-0613}, OpenAI) and Claude 3.5 Sonnet (\texttt{claude-3-5-sonnet-20241022}, Anthropic) for literature search and initial code drafting. No protected health information, controlled-access data, confidential peer-review material, or unpublished third-party material was provided to either tool. All outputs were reviewed, verified, and revised by the authors, who take full responsibility for the accuracy, integrity, originality, source attribution, and data-governance compliance of the work. Verification procedures included source checking against retrieved DOIs, recomputation of all quantitative claims, code review by a second author, and a bias audit on subgroup outputs.}
 \end{quote}
 
 \subsection{Detailed Disclosure (Substantial Agent Involvement)}
 
 \begin{quote}
-\textit{This work made substantial use of AI-assisted tools for [specific tasks]. Specifically, [Tool A, version X] was used for [task 1]; [Tool B, version Y] was used for [task 2]. The authors implemented the following verification procedures: [describe]. Complete logs of agent interactions are available [location/upon request]. All claims, analyses, and conclusions were reviewed and affirmed by the authors, who take full responsibility for the work.}
+\textit{This work made substantial use of AI-assisted tools for [specific tasks]. Specifically, [Tool A, version X] was used for [task 1]; [Tool B, version Y] was used for [task 2]. The authors implemented the following verification procedures: [describe]. Complete logs of agent interactions are available [location/upon request]. All claims, analyses, and conclusions were reviewed and affirmed by the authors, who take full responsibility for the work. Data classes provided to each tool and verification procedures applied to each output category must be documented.}
 \end{quote}
 
 \section{Assessment Instrument}
@@ -503,13 +766,14 @@ The following assessment can be used in educational settings to evaluate underst
         \item Faster response time
     \end{enumerate}
     
-    \item (1 pt) ``Invalidation'' includes which of the following? (Select all that apply)
+    \item (1 pt) Which of the following are examples of invalidation? Mark every option that applies.
     \begin{enumerate}[label=\Alph*.]
-        \item Fabricated citations
-        \item Broken JSON schema in a pipeline output
-        \item A logically inconsistent statistical conclusion
-        \item All of the above
+        \item A fabricated citation.
+        \item A statistically invalid inference from correct intermediate results.
+        \item Malformed JSON passed to a downstream pipeline.
+        \item Disclosure of protected health information in an output.
     \end{enumerate}
+    \emph{Answer key:} A, B, C, and D each independently. Full credit requires marking all four.
     
     \item (1 pt) According to COPE/ICMJE/WAME guidance, AI tools should be listed as authors:
     \begin{enumerate}[label=\Alph*.]
@@ -519,23 +783,25 @@ The following assessment can be used in educational settings to evaluate underst
         \item Only in methods papers
     \end{enumerate}
     
-    \item (1 pt) True or False: If an LLM drafts a methods section, adding your name as author without careful review is ethically acceptable because you ``own'' the project.
+    \item (1 pt) True or False: A principal investigator may claim authorship on a methods section drafted entirely by an LLM if the PI has not reviewed each claim. \emph{Answer:} False. Credit answers that cite the ICMJE accountability requirement.
     
-    \item (2 pts) You are serving on a federal grant review panel. Which action is ethically and policy problematic?
+    \item (2 pts) You are serving on a federal grant review panel. Which actions are policy problematic? Mark all that apply.
     \begin{enumerate}[label=\Alph*.]
-        \item Taking handwritten notes
-        \item Uploading proposal text into a public LLM to draft critiques
-        \item Discussing scoring criteria in the panel meeting
-        \item Checking formatting rules in the solicitation
+        \item Taking handwritten notes on the proposals.
+        \item Uploading proposal text into a public LLM to draft critiques.
+        \item Discussing the proposal in detail with a colleague at the same institution who is not on the panel.
+        \item Checking formatting rules in the solicitation.
     \end{enumerate}
+    \emph{Answer:} B and C. B violates NIH NOT-OD-23-149 and NSF confidentiality. C violates standard reviewer confidentiality agreements.
     
-    \item (2 pts) A multi-agent ``everyone critiques everyone'' workflow most directly raises which concern?
+    \item (2 pts) A multi-agent ``all-pairs critique'' workflow with $n=7$ agents most directly raises which concerns? Mark all that apply.
     \begin{enumerate}[label=\Alph*.]
-        \item Quadratic compute/energy growth
-        \item Reduced need for disclosure
-        \item Guaranteed absence of bias
-        \item Elimination of confidentiality concerns
+        \item Compute and energy cost growing approximately as $n^2$.
+        \item Loss of architectural diversity if all agents come from the same model family, leading to correlated errors.
+        \item Privacy amplification when sensitive content is shared with multiple services.
+        \item Guaranteed absence of bias from the consensus output.
     \end{enumerate}
+    \emph{Answer:} A, B, and C. D is false; consensus among similar models does not guarantee correctness.
 \end{enumerate}
 
 \subsection{Short Response (2 points)}
@@ -544,20 +810,13 @@ The following assessment can be used in educational settings to evaluate underst
     \setcounter{enumi}{6}
     \item (1 pt) Write a one-sentence disclosure describing how AI tools were used in a manuscript or analysis you might produce.
     
-    \item (1 pt) Name one safeguard you would implement before allowing an agent to execute code on biomedical data.
+    \item (2 pts) Name two safeguards you would implement before allowing an agent to execute code on biomedical data, and justify each in one sentence. \emph{Rubric:} Full credit for two of the following with one-sentence justification: sandboxed disposable container, human approval gate before write or network operations, audit logging of all tool calls, data redaction or synthetic substitution, restricted network egress, no production credentials in agent context.
 \end{enumerate}
 
-\subsection{Answer Key}
+\subsection{Answer Key (Multiple-Choice Summary)}
 
 \begin{itemize}
-    \item Q1: B
-    \item Q2: D
-    \item Q3: C
-    \item Q4: False
-    \item Q5: B
-    \item Q6: A
-    \item Q7: Credit for specific mention of tool and task
-    \item Q8: Credit for concrete safeguard (e.g., sandboxing, human approval gate, audit logging, data redaction)
+    \item Q1: B. \quad Q2: A, B, C, D (all four). \quad Q3: C. \quad Q4: False. \quad Q5: B and C. \quad Q6: A, B, and C. \quad Q7: Credit for specific mention of tool and task. \quad Q8: See rubric in question.
 \end{itemize}
 
 \end{document}
